@@ -1,0 +1,78 @@
+'use client'
+
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { Home, Search, PlusCircle, CalendarCheck, User } from "lucide-react"
+import { cn } from "@/lib/utils"
+
+export default function BottomNav() {
+    const pathname = usePathname()
+
+    const navItems = [
+        {
+            label: "Home",
+            href: "/",
+            icon: Home,
+        },
+        {
+            label: "Search",
+            href: "/search",
+            icon: Search,
+        },
+        {
+            label: "Post",
+            href: "/post-item",
+            icon: PlusCircle,
+            primary: true,
+        },
+        {
+            label: "Bookings",
+            href: "/dashboard/bookings",
+            icon: CalendarCheck,
+        },
+        {
+            label: "Profile",
+            href: "/dashboard/profile",
+            icon: User,
+        },
+    ]
+
+    return (
+        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background pb-safe">
+            <div className="container flex h-16 items-center px-2 justify-around">
+                {navItems.map((item) => {
+                    const isActive = pathname === item.href
+
+                    if (item.primary) {
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className="flex flex-col items-center justify-center -mt-6"
+                            >
+                                <div className="rounded-full bg-primary p-3 text-primary-foreground shadow-lg transition-transform active:scale-95">
+                                    <item.icon className="h-6 w-6" />
+                                </div>
+                                <span className="text-xs font-medium mt-1 text-foreground/80">{item.label}</span>
+                            </Link>
+                        )
+                    }
+
+                    return (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={cn(
+                                "flex flex-col items-center justify-center w-16 h-full space-y-1 text-muted-foreground transition-colors hover:text-foreground",
+                                isActive && "text-primary"
+                            )}
+                        >
+                            <item.icon className={cn("h-5 w-5", isActive && "fill-current")} />
+                            <span className="text-[10px] font-medium">{item.label}</span>
+                        </Link>
+                    )
+                })}
+            </div>
+        </nav>
+    )
+}
