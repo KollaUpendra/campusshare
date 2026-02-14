@@ -72,6 +72,16 @@ export default function RootLayout({
 
             {/* Mobile Bottom Navigation */}
             <BottomNav />
+
+            {/* Footer with Legal Links */}
+            <footer className="py-6 text-center text-sm text-gray-500 pb-24 md:pb-6">
+              <div className="flex justify-center gap-4">
+                <a href="/privacy" className="hover:underline hover:text-gray-900">Privacy Policy</a>
+                <span>•</span>
+                <a href="/terms" className="hover:underline hover:text-gray-900">Terms of Service</a>
+              </div>
+              <p className="mt-2">© {new Date().getFullYear()} CampusShare</p>
+            </footer>
           </div>
         </Providers>
       </body>
