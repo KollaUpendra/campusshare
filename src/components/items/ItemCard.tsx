@@ -1,9 +1,19 @@
+/**
+ * @file ItemCard.tsx
+ * @description UI Component for displaying valid rental items in a grid.
+ * @module Components/Items/ItemCard
+ */
+
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { User } from "lucide-react";
 
+/**
+ * Props for the ItemCard component.
+ * Represents the data structure of an item as returned by the API/Prisma.
+ */
 interface ItemCardProps {
     item: {
         id: string;
@@ -20,6 +30,13 @@ interface ItemCardProps {
     };
 }
 
+/**
+ * ItemCard Component
+ * 
+ * Displays a summary of a rental item in a card format.
+ * - Shows title, price, owner, and available days.
+ * - Links to the full item details page.
+ */
 export default function ItemCard({ item }: ItemCardProps) {
     return (
         <Card className="overflow-hidden">

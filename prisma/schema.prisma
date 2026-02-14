@@ -1,3 +1,11 @@
+// ============================================================================
+// CampusShare Platform — Prisma Schema
+// ============================================================================
+// Database:   SQLite (dev), configurable for Postgres in production.
+// ORM:        Prisma Client (generated via `npx prisma generate`).
+// Migrations: Use `npx prisma db push` for development sync.
+// ============================================================================
+
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -6,8 +14,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql" // Changed from "sqlite"
+  url      = env("DATABASE_URL") // Uses connection string from .env
 }
 
 // NextAuth Adapter Models
@@ -17,12 +25,12 @@ model Account {
   type               String
   provider           String
   providerAccountId  String
-  refresh_token      String? @db.Text
-  access_token       String? @db.Text
+  refresh_token      String?
+  access_token       String?
   expires_at         Int?
   token_type         String?
   scope              String?
-  id_token           String? @db.Text
+  id_token           String?
   session_state      String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

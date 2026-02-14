@@ -1,3 +1,9 @@
+/**
+ * @file card.tsx
+ * @description Reusable Card component family (shadcn/ui).
+ * @module Components/UI/Card
+ */
+
 import * as React from "react"
 import { cn } from "@/lib/utils"
 

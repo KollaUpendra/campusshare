@@ -1,3 +1,15 @@
+/**
+ * @file BottomNav.tsx
+ * @description Mobile-responsive bottom navigation bar.
+ * @module Components/Layout/BottomNav
+ * 
+ * Functionality:
+ * - Provides quick access to main routes (Home, Search, Bookings, Profile).
+ * - Highlights the active route.
+ * - Features a prominent "Post Item" button.
+ * - Hidden on larger screens (md+), visible on mobile.
+ */
+
 'use client'
 
 import Link from "next/link"
@@ -5,6 +17,10 @@ import { usePathname } from "next/navigation"
 import { Home, Search, PlusCircle, CalendarCheck, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+/**
+ * BottomNav Component
+ * Renders a fixed bottom navigation bar for mobile users.
+ */
 export default function BottomNav() {
     const pathname = usePathname()
 

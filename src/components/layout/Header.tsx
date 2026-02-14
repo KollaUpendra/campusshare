@@ -1,3 +1,14 @@
+/**
+ * @file Header.tsx
+ * @description Global application header component.
+ * @module Components/Layout/Header
+ * 
+ * Functionality:
+ * - Displays the logo/brand.
+ * - Shows user authentication state.
+ * - Provides access to notifications and profile.
+ */
+
 'use client'
 
 import Link from "next/link"
@@ -6,6 +17,15 @@ import { Button } from "@/components/ui/button"
 import { useSession } from "next-auth/react"
 import { LoginButton } from "@/components/auth/LoginButton"
 
+/**
+ * Header Component
+ * 
+ * Displays the top navigation bar.
+ * - Handles user session state (logged in vs logged out).
+ * - Shows Notifications bell and User Avatar if authenticated.
+ * - Shows "Sign In" button if unauthenticated.
+ * - Sticky positioning at the top of the viewport.
+ */
 export default function Header() {
     const { data: session } = useSession()
 

@@ -1,3 +1,13 @@
+/**
+ * @file loading.tsx
+ * @description Global Loading Skeleton for the application.
+ * @module App/Loading
+ * 
+ * Functionality:
+ * - Displays a shimmer effect (skeleton) matching the Home page layout.
+ * - Used automatically by Next.js during route transitions or data fetching.
+ */
+
 export default function Loading() {
     return (
         <div className="flex flex-col gap-6 pb-20">

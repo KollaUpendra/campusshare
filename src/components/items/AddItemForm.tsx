@@ -1,3 +1,15 @@
+/**
+ * @file AddItemForm.tsx
+ * @description Form component for creating and updating rental items.
+ * @module Components/Items/AddItemForm
+ * 
+ * Functionality:
+ * - Validates input using Zod schema.
+ * - Handles both "Create" (POST) and "Update" (PUT) operations.
+ * - Manages availability day selection.
+ * - Provides loading state feedback.
+ */
+
 "use client";
 
 import { useState } from "react";
@@ -20,8 +32,18 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function AddItemForm() {
-    const [selectedDays, setSelectedDays] = useState<string[]>([]);
+interface AddItemFormProps {
+    initialData?: {
+        id: string;
+        title: string;
+        description: string;
+        price: number;
+        availability: { dayOfWeek: string }[];
+    };
+}
+
+export default function AddItemForm({ initialData }: AddItemFormProps) {
+    const [selectedDays, setSelectedDays] = useState<string[]>(initialData?.availability.map(a => a.dayOfWeek) || []);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
 
@@ -31,6 +53,11 @@ export default function AddItemForm() {
         formState: { errors },
     } = useForm<FormData>({
         resolver: zodResolver(formSchema),
+        defaultValues: initialData ? {
+            title: initialData.title,
+            description: initialData.description,
+            price: initialData.price.toString(),
+        } : undefined,
     });
 
     const onSubmit = async (data: FormData) => {
@@ -41,26 +68,34 @@ export default function AddItemForm() {
 
         setIsSubmitting(true);
         try {
-            const res = await fetch("/api/items", {
-                method: "POST",
+            const url = "/api/items";
+            const method = initialData ? "PUT" : "POST";
+
+            const payload = {
+                id: initialData?.id, // Only for PUT
+                title: data.title,
+                description: data.description,
+                price: parseFloat(data.price),
+                availability: selectedDays,
+            };
+
+            const res = await fetch(url, {
+                method: method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    title: data.title,
-                    description: data.description,
-                    price: parseFloat(data.price),
-                    availability: selectedDays,
-                }),
+                body: JSON.stringify(payload),
             });
 
             if (!res.ok) {
-                throw new Error("Failed to create item");
+                const msg = await res.text();
+                throw new Error(msg || "Failed to save item");
             }
 
-            router.push("/");
+            router.push(initialData ? `/items/${initialData.id}` : "/");
             router.refresh(); // Refresh server components
-        } catch (error) {
+        } catch (error: unknown) {
             console.error(error);
-            alert("Something went wrong");
+            const message = error instanceof Error ? error.message : "Something went wrong";
+            alert(message);
         } finally {
             setIsSubmitting(false);
         }
@@ -74,6 +109,8 @@ export default function AddItemForm() {
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6 max-w-md mx-auto py-6">
+            <h1 className="text-2xl font-bold text-center">{initialData ? "Edit Item" : "List New Item"}</h1>
+
             <div className="space-y-2">
                 <label htmlFor="title" className="text-sm font-medium">Item Name</label>
                 <input
@@ -115,8 +152,8 @@ export default function AddItemForm() {
                             type="button"
                             onClick={() => toggleDay(day)}
                             className={`px-3 py-2 rounded-full text-sm border transition-colors ${selectedDays.includes(day)
-                                    ? "bg-primary text-primary-foreground border-primary"
-                                    : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
                                 }`}
                         >
                             {day.slice(0, 3)}
@@ -130,10 +167,10 @@ export default function AddItemForm() {
                 {isSubmitting ? (
                     <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Posting...
+                        Saving...
                     </>
                 ) : (
-                    "List Item"
+                    initialData ? "Update Item" : "List Item"
                 )}
             </Button>
         </form>

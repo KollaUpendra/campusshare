@@ -1,3 +1,13 @@
+/**
+ * @file route.ts
+ * @description NextAuth API Route Handler.
+ * @module App/API/Auth
+ * 
+ * Purpose:
+ * - Handles all authentication requests (SignIn, SignOut, Session, etc.).
+ * - dynamic route `[...nextauth]` captures all auth-related paths.
+ */
+
 import NextAuth from "next-auth"
 import { authOptions } from "@/lib/auth"
 

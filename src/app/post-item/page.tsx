@@ -1,3 +1,13 @@
+/**
+ * @file page.tsx
+ * @description Page for listing a new rental item.
+ * @module App/PostItem
+ * 
+ * Functionality:
+ * - Wraps the AddItemForm component.
+ * - Provides a "Back" button to return to the home page.
+ */
+
 import AddItemForm from "@/components/items/AddItemForm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";

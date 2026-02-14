@@ -1,68 +1,175 @@
+/**
+ * @file auth.ts
+ * @description Configuration for NextAuth.js authentication in the CampusShare platform.
+ * @module Lib/Auth
+ * 
+ * Key Components:
+ * - GoogleProvider: Used for Google OAuth sign-in.
+ * - PrismaAdapter: Connects NextAuth to the Prisma database.
+ * - Callbacks: Handles custom logic for signIn, jwt, and session management.
+ * 
+ * Dependencies:
+ * - next-auth
+ * - @auth/prisma-adapter
+ * - @/lib/db (Prisma Client)
+ * 
+ * Environment Variables:
+ * - GOOGLE_CLIENT_ID
+ * - GOOGLE_CLIENT_SECRET
+ * - ALLOWED_DOMAIN (optional, defaults to @yourcollege.edu)
+ * 
+ * Notes:
+ * - Uses "jwt" strategy to ensure role propagation to middleware.
+ */
+
 import { NextAuthOptions } from "next-auth"
+import type { Adapter } from "next-auth/adapters"
 import GoogleProvider from "next-auth/providers/google"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import db from "@/lib/db"
+import CredentialsProvider from "next-auth/providers/credentials"
 
-const ALLOWED_DOMAIN = "@yourcollege.edu"; // Change this to your campus domain
+// Limit sign-ins to a specific domain for campus security
+const ALLOWED_DOMAIN = process.env.ALLOWED_DOMAIN || "@yourcollege.edu";
+
+/**
+ * NextAuth configuration object.
+ * Defines providers, adapters, and callback logic for authentication flows.
+ */
+// Debugging environment
+console.log(`[Auth] Initializing NextAuth. NODE_ENV=${process.env.NODE_ENV}`);
 
 export const authOptions: NextAuthOptions = {
-    adapter: PrismaAdapter(db) as any,
+    // connect to Prisma DB for user/session storage
+    adapter: PrismaAdapter(db) as Adapter,
     session: {
-        // BUG FIX: Changed from "database" to "jwt".
-        // With "database" strategy, NextAuth does NOT create JWTs, so
-        // req.nextauth.token in middleware is always null/undefined.
-        // This caused token.role to be undefined for ALL users, meaning
-        // even admins were redirected away from /admin routes.
-        // With "jwt" strategy, the token is available in middleware and
-        // the jwt callback below embeds the user's role into it.
+        // STRATEGY: "jwt"
+        // Required for middleware compatibility.
+        // - "database" strategy does not populate req.nextauth.token in middleware.
+        // - "jwt" strategy allows us to access the token and user role in middleware
+        //   to perform efficient role-based redirects (e.g., protecting /admin routes).
         strategy: "jwt",
     },
     providers: [
+        /**
+         * Google OAuth Provider
+         * Requires GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env
+         */
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID!,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
         }),
+        /**
+         * Credentials Provider (Development/Test Only)
+         * Allows bypassing Google OAuth for E2E testing.
+         */
+        CredentialsProvider({
+            name: "Testing Credentials",
+            credentials: {
+                email: { label: "Email", type: "text" },
+                role: { label: "Role", type: "text" },
+                id: { label: "ID", type: "text" },
+            },
+            async authorize(credentials) {
+                // ONLY allow in development or test environment
+                if (process.env.NODE_ENV === "production") return null;
+
+                if (!credentials?.email || !credentials?.id) return null;
+
+                // Return a mock user object
+                return {
+                    id: credentials.id,
+                    email: credentials.email,
+                    name: "Test User",
+                    role: credentials.role || "student",
+                    image: "https://github.com/shadcn.png",
+                };
+            },
+        }),
     ],
     callbacks: {
-        async signIn({ user }) {
-            // FR-01: Domain Validation Logic
+        /**
+         * SignIn Callback
+         * Controls whether a user is allowed to sign in.
+         * 
+         * @param {object} user - The user object returned by the provider.
+         * @returns {Promise<boolean>} True if sign-in is allowed, false otherwise.
+         */
+        async signIn({ user, account }) {
+            // Allow Credentials Provider (Testing) to bypass domain check
+            if (account?.provider === "credentials") {
+                return true;
+            }
+
+            // DOMAIN RESTRICTION LOGIC
+            // Only allow emails from the specified academic domain.
             if (user.email?.endsWith(ALLOWED_DOMAIN)) {
                 return true;
             }
             // Allow localhost debugging with specific test email if needed
-            // if (process.env.NODE_ENV === "development") return true 
+            // if (process.env.NODE_ENV === "development") return true
 
             return false; // Rejects login for external emails
         },
+
+        /**
+         * JWT Callback
+         * logic to attach custom claims (like user role) to the JWT.
+         * 
+         * @param {object} token - The JWT token.
+         * @param {object} user - The user object (only available on initial sign-in).
+         * @returns {Promise<object>} The modified token.
+         */
         async jwt({ token, user }) {
-            // On initial sign-in, `user` is provided by the adapter.
-            // We read the role from the database and embed it in the JWT.
-            if (user) {
-                token.id = user.id;
-                token.role = (user as any).role || "student";
-            }
-            // On subsequent requests, if role is missing (e.g. old tokens),
-            // look it up from the database to stay in sync.
-            if (!token.role && token.id) {
-                const dbUser = await db.user.findUnique({
-                    where: { id: token.id as string },
-                    select: { role: true },
-                });
-                token.role = dbUser?.role || "student";
+            try {
+                // On initial sign-in, `user` is provided by the adapter/provider.
+                if (user) {
+                    token.id = user.id;
+                    // Assign default role if not present
+                    token.role = (user as { role?: string }).role || "student";
+                }
+
+                // RE-FETCH ROLE IF MISSING
+                // If the token exists but lacks a role (edge case: manual invalidation),
+                // fetch it from the database to ensure consistency.
+                // Optimization: We check !token.role to avoid hitting the DB on every single request.
+                if (!token.role && token.id) {
+                    const dbUser = await db.user.findUnique({
+                        where: { id: token.id as string },
+                        select: { role: true },
+                    });
+                    token.role = dbUser?.role || "student";
+                }
+            } catch (error) {
+                console.error("JWT Callback Error:", error);
+                // Don't crash, just return the token as-is or with safe defaults
+                token.role = token.role || "student";
             }
             return token;
         },
+
+        /**
+         * Session Callback
+         * Exposes the user's ID and Role to the client-side session object.
+         * 
+         * @param {object} session - The session object to be returned to the client.
+         * @param {object} token - The JWT token containing the user's claims.
+         * @returns {Promise<object>} The modified session object.
+         */
         async session({ session, token }) {
-            // With JWT strategy, the session callback receives `token` (not `user`).
-            if (session.user) {
-                session.user.id = token.id as string;
-                session.user.role = token.role as string;
+            try {
+                if (session.user) {
+                    session.user.id = token.id as string;
+                    session.user.role = token.role as string;
+                }
+            } catch (error) {
+                console.error("Session Callback Error:", error);
             }
             return session;
         },
     },
-    pages: {
-        signIn: '/api/auth/signin',
-        error: '/api/auth/error',
-    },
+    // pages: {
+    //     signIn: '/api/auth/signin',
+    //     error: '/api/auth/error',
+    // },
 }

@@ -1,9 +1,24 @@
+/**
+ * @file page.tsx
+ * @description The Homepage of the CampusShare platform.
+ * @module App/Home
+ * 
+ * Purpose:
+ * - Displays a searchable list of available items.
+ * - Provides a "Post Item" shortcut for mobile users.
+ * 
+ * Data Fetching:
+ * - Server Component that fetches data directly from the DB.
+ * - Supports URL-based search queries.
+ */
+
+export const dynamic = "force-dynamic";
+
 import ItemCard from "@/components/items/ItemCard";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Search } from "lucide-react";
 import Link from "next/link";
 import db from "@/lib/db";
-
 async function getItems(query?: string) {
   try {
     const items = await db.item.findMany({
@@ -11,8 +26,8 @@ async function getItems(query?: string) {
         status: "active",
         ...(query ? {
           OR: [
-            { title: { contains: query, mode: "insensitive" } },
-            { description: { contains: query, mode: "insensitive" } },
+            { title: { contains: query } },
+            { description: { contains: query } },
           ]
         } : {})
       },
@@ -36,8 +51,8 @@ async function getItems(query?: string) {
   }
 }
 
-export default async function Home({ searchParams }: { searchParams: { query?: string } }) {
-  const query = searchParams.query;
+export default async function Home({ searchParams }: { searchParams: Promise<{ query?: string }> }) {
+  const { query } = await searchParams;
   const items = await getItems(query);
 
   return (
@@ -62,7 +77,6 @@ export default async function Home({ searchParams }: { searchParams: { query?: s
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {items.length > 0 ? (
           items.map((item) => (
-            // @ts-ignore - Prisma include types can be tricky in server components sometimes, or strict null checks
             <ItemCard key={item.id} item={item} />
           ))
         ) : (

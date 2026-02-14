@@ -3,8 +3,8 @@ import { test, expect } from '@playwright/test';
 import { createTestUser, loginUser, cleanupTestData } from './test-utils';
 
 test.describe('Security Guard: Admin Protection', () => {
-    let student: { user: any, sessionToken: string };
-    let admin: { user: any, sessionToken: string };
+    let student: { user: { id: string; email: string | null; role: string;[key: string]: unknown } };
+    let admin: { user: { id: string; email: string | null; role: string;[key: string]: unknown } };
 
     test.beforeAll(async () => {
         student = await createTestUser('student');
@@ -17,7 +17,7 @@ test.describe('Security Guard: Admin Protection', () => {
 
     test('Student cannot access admin dashboard', async ({ page }) => {
         // Login as Student
-        await loginUser(page, student.sessionToken);
+        await loginUser(page, student.user);
 
         // Attempt to go to Admin Dashboard
         await page.goto('/admin/dashboard');
@@ -32,7 +32,7 @@ test.describe('Security Guard: Admin Protection', () => {
 
     test('Admin can access admin dashboard', async ({ page }) => {
         // Login as Admin
-        await loginUser(page, admin.sessionToken);
+        await loginUser(page, admin.user);
 
         // Attempt to go to Admin Dashboard
         await page.goto('/admin/dashboard');

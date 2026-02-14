@@ -3,9 +3,9 @@ import { test, expect } from '@playwright/test';
 import { createTestUser, createTestItem, loginUser, cleanupTestData } from './test-utils';
 
 test.describe('Critical Path: Booking Flow', () => {
-    let borrower: { user: any, sessionToken: string };
-    let owner: { user: any, sessionToken: string };
-    let item: any;
+    let borrower: { user: { id: string; email: string | null; role: string;[key: string]: unknown } };
+    let owner: { user: { id: string; email: string | null; role: string;[key: string]: unknown } };
+    let item: { id: string; title: string;[key: string]: unknown };
 
     test.beforeAll(async () => {
         // 1. Setup Data
@@ -21,48 +21,53 @@ test.describe('Critical Path: Booking Flow', () => {
 
     test('User can browse, view item, and request it', async ({ page }) => {
         // 2. Login as Borrower
-        await loginUser(page, borrower.sessionToken);
+        await loginUser(page, borrower.user);
 
         // 3. Go to Home Page
         await page.goto('/');
 
-        // 4. Verify Logged In (optional, checks for avatar or profile link)
-        // await expect(page.locator('text=Test User')).toBeVisible(); // Might be in a dropdown
-
         // 5. Find Item in Feed
-        // Assuming the specific item is visible or searchable.
-        // If many items, we might need to search or filter.
-        // Let's filter by title to be safe.
         await page.fill('input[placeholder="Search items..."]', item.title);
         await page.click('button:has-text("Search")');
 
-        // Wait for the item to appear
-        const itemCard = page.locator(`.group:has-text("${item.title}")`).first(); // Adjust selector if needed
-        // Actually, ItemCard uses Title which is unique enough here.
+        // Wait for item
         await expect(page.locator(`text=${item.title}`)).toBeVisible();
 
-        // 6. Click on Item (Navigate to Details)
-        await page.click(`text=${item.title}`); // This clicks the title or card? 
-        // ItemCard has a "View Details" button.
-        // Let's click specifically the "View Details" button inside the card.
-        // Or just click the title if it's a link. ItemCard title is NOT a link, the button is.
-        // The button says "View Details".
-        // We need to click "View Details" for *this* item.
-        // Locator: find card with text title, then find button "View Details".
+        // 6. Click on Item
         await page.locator('.rounded-xl', { hasText: item.title }).getByRole('link', { name: 'View Details' }).click();
 
-        // 7. Verify Navigation to Item Details
+        // 7. Verify Navigation
         await expect(page).toHaveURL(new RegExp(`/items/${item.id}`));
 
-        // 8. Request Item (Booking)
-        // Assuming there is a "Request" or "Book" button.
-        // Since the page doesn't exist, this will fail.
-        // But this is the test description.
-        const requestButton = page.getByRole('button', { name: /Request|Book/i });
-        await expect(requestButton).toBeVisible();
-        await requestButton.click();
+        // 8. Find valid date (Monday or Tuesday)
+        const getNextValidDate = () => {
+            const d = new Date();
+            while (d.getDay() !== 1 && d.getDay() !== 2) { // 1=Monday, 2=Tuesday
+                d.setDate(d.getDate() + 1);
+            }
+            return d.toISOString().split('T')[0];
+        };
+        const validDate = getNextValidDate();
 
-        // 9. Verify Success
-        await expect(page.getByText(/Request Sent|Booking Confirmed/i)).toBeVisible();
+        // 9. Request Item
+        await page.getByRole('button', { name: /Request|Book/i }).click();
+
+        // 10. Fill Date (inside Popover)
+        await page.locator('input[type="date"]').fill(validDate);
+
+        // 11. Find Confirm Button
+        const confirmButton = page.getByRole('button', { name: 'Confirm Request' });
+        await expect(confirmButton).toBeEnabled();
+
+        // 12. Setup Dialog Handler BEFORE clicking
+        const dialogPromise = page.waitForEvent('dialog');
+
+        // 13. Confirm
+        await confirmButton.click();
+
+        // 14. Verify Dialog
+        const dialog = await dialogPromise;
+        expect(dialog.message()).toContain('Request sent successfully!');
+        await dialog.accept();
     });
 });

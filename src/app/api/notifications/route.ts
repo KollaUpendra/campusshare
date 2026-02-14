@@ -1,8 +1,28 @@
+/**
+ * @file route.ts
+ * @description API Handler for User Notifications.
+ * @module App/API/Notifications
+ * 
+ * Supported Methods:
+ * - GET: Fetch recent notifications for the logged-in user.
+ */
+
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
+/**
+ * GET Handler for Notifications
+ * Retrieves notifications for the current user.
+ * 
+ * Limitations:
+ * - Currently limits to the most recent 20 notifications.
+ * - Ordered by newest first.
+ * 
+ * @param {Request} req - The HTTP request object.
+ * @returns {NextResponse} JSON list of notifications.
+ */
 export async function GET(req: Request) {
     try {
         const session = await getServerSession(authOptions);

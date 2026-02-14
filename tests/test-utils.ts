@@ -1,6 +1,5 @@
 import { Page } from '@playwright/test';
-import db from '../src/lib/db'; // Relative import to avoid alias issues if not configured perfectly
-import { User, Item } from '@prisma/client';
+import db from '../src/lib/db';
 
 export const createTestUser = async (role: string = 'student') => {
     const email = `test-${Date.now()}-${Math.floor(Math.random() * 1000)}@example.com`;
@@ -15,20 +14,8 @@ export const createTestUser = async (role: string = 'student') => {
         },
     });
 
-    // Create a session for this user to simulate login
-    const sessionToken = `test-session-${user.id}`;
-    const expires = new Date();
-    expires.setDate(expires.getDate() + 1); // Expires in 1 day
-
-    await db.session.create({
-        data: {
-            sessionToken,
-            userId: user.id,
-            expires,
-        },
-    });
-
-    return { user, sessionToken };
+    // We no longer create a session in DB because we use JWT strategy.
+    return { user };
 };
 
 export const createTestItem = async (ownerId: string) => {
@@ -50,23 +37,36 @@ export const createTestItem = async (ownerId: string) => {
     return item;
 };
 
-export const loginUser = async (page: Page, sessionToken: string) => {
-    // Set the session cookie. Name depends on environment (secure vs non-secure)
-    // In dev (http), it's next-auth.session-token
-    // We set both just in case, or check strictness.
-    // For localhost, next-auth.session-token is standard.
+export const loginUser = async (page: Page, user: { id: string, email: string | null, role: string }) => {
+    const baseURL = 'http://localhost:3000';
 
-    await page.context().addCookies([
-        {
-            name: 'next-auth.session-token',
-            value: sessionToken,
-            domain: 'localhost',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-            expires: Date.now() / 1000 + 86400,
+    // 1. Get CSRF Token
+    const csrfRes = await page.request.get(`${baseURL}/api/auth/csrf`);
+    const csrfJson = await csrfRes.json();
+    const { csrfToken } = csrfJson;
+
+    // 2. Perform Login via Credentials Provider
+
+    const loginRes = await page.request.post(`${baseURL}/api/auth/callback/credentials`, {
+        form: {
+            csrfToken,
+            email: user.email || '',
+            id: user.id,
+            role: user.role,
+            redirect: 'false',
+            json: 'true',
         },
-    ]);
+    });
+
+    const loginText = await loginRes.text();
+
+    if (!loginRes.ok()) {
+        throw new Error(`Login failed: ${loginRes.status()} ${loginText}`);
+    }
+
+    // 3. Refresh the page to pick up the session? 
+    // Usually not needed if cookies are set, but let's reload if we are already on a page.
+    // Or just let the test navigate.
 };
 
 export const cleanupTestData = async (userIds: string[], itemIds: string[]) => {
