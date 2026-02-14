@@ -64,6 +64,7 @@ model User {
   emailVerified DateTime?
   image         String?
   role          String    @default("student") // 'student' | 'admin'
+  isBlocked     Boolean   @default(false)
   createdAt     DateTime  @default(now())
 
   accounts Account[]

@@ -112,6 +112,18 @@ export const authOptions: NextAuthOptions = {
                 return true;
             }
 
+            // CHECK IF USER IS BLOCKED
+            if (user.email) {
+                const dbUser = await db.user.findUnique({
+                    where: { email: user.email },
+                    select: { isBlocked: true },
+                });
+                if (dbUser?.isBlocked) {
+                    console.warn(`[Auth] Blocked user attempted login: ${user.email}`);
+                    return false; // Denies login
+                }
+            }
+
             // Ensure no quotes from env var and default to vnrvjiet.in if missing
             const allowedDomain = (process.env.ALLOWED_DOMAIN || "@vnrvjiet.in").replace(/^['"]|['"]$/g, '').toLowerCase();
             const userEmail = user.email?.toLowerCase();
