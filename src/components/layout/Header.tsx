@@ -13,6 +13,7 @@
 
 import Link from "next/link"
 import { Bell, User as UserIcon } from "lucide-react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { useSession } from "next-auth/react"
 import { LoginButton } from "@/components/auth/LoginButton"
@@ -46,7 +47,7 @@ export default function Header() {
                             </Button>
                             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border">
                                 {session.user?.image ? (
-                                    <img src={session.user.image} alt={session.user.name || "User"} className="h-full w-full object-cover" />
+                                    <Image src={session.user.image} alt={session.user.name || "User"} width={32} height={32} className="h-full w-full object-cover" />
                                 ) : (
                                     <UserIcon className="h-5 w-5 text-primary" />
                                 )}

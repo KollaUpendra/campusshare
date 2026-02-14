@@ -1,7 +1,7 @@
 // ============================================================================
 // CampusShare Platform — Prisma Schema
 // ============================================================================
-// Database:   SQLite (dev), configurable for Postgres in production.
+// Database:   PostgreSQL (Supabase in production).
 // ORM:        Prisma Client (generated via `npx prisma generate`).
 // Migrations: Use `npx prisma db push` for development sync.
 // ============================================================================

@@ -27,7 +27,10 @@ export default withAuth(
         // Retrieve the JWT token from the request
         const token = req.nextauth.token;
         const pathname = req.nextUrl.pathname;
-        console.log(`[Middleware] Processing: ${pathname}`);
+        // Only log in development to avoid production noise
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[Middleware] Processing: ${pathname}`);
+        }
 
         const isAdminRoute = pathname.startsWith("/admin");
 

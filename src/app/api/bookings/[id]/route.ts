@@ -53,6 +53,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
             return new NextResponse("Unauthorized", { status: 403 });
         }
 
+        // Prevent re-processing already finalized bookings
+        if (booking.status !== "pending") {
+            return new NextResponse(`Booking already ${booking.status}`, { status: 400 });
+        }
+
         const updatedBooking = await db.booking.update({
             where: { id },
             data: { status }

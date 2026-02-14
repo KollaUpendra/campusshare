@@ -54,7 +54,7 @@ export default function BookingsPage() {
         if (status === "authenticated") {
             fetchBookings();
         }
-    }, [status, activeTab]);
+    }, [status, activeTab, router]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const fetchBookings = async () => {
         setLoading(true);

@@ -6,7 +6,12 @@ import { Badge } from "@/components/ui/badge";
 export default async function AdminBookingsPage() {
     const bookings = await db.booking.findMany({
         include: {
-            item: { select: { title: true } },
+            item: {
+                select: {
+                    title: true,
+                    owner: { select: { name: true, email: true } },
+                },
+            },
             borrower: { select: { name: true, email: true } },
         },
         orderBy: { createdAt: "desc" },
@@ -33,6 +38,7 @@ export default async function AdminBookingsPage() {
                         <thead>
                             <tr className="bg-muted/50 border-b">
                                 <th className="text-left p-3 font-medium">Item</th>
+                                <th className="text-left p-3 font-medium">Owner</th>
                                 <th className="text-left p-3 font-medium">Borrower</th>
                                 <th className="text-left p-3 font-medium">Date</th>
                                 <th className="text-left p-3 font-medium">Status</th>
@@ -42,7 +48,7 @@ export default async function AdminBookingsPage() {
                         <tbody>
                             {bookings.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="p-6 text-center text-muted-foreground">
+                                    <td colSpan={6} className="p-6 text-center text-muted-foreground">
                                         No bookings yet
                                     </td>
                                 </tr>
@@ -50,6 +56,12 @@ export default async function AdminBookingsPage() {
                             {bookings.map((booking) => (
                                 <tr key={booking.id} className="border-b last:border-0 hover:bg-muted/30">
                                     <td className="p-3 font-medium">{booking.item.title}</td>
+                                    <td className="p-3">
+                                        <div>
+                                            <p>{booking.item.owner.name || "Unnamed"}</p>
+                                            <p className="text-xs text-muted-foreground">{booking.item.owner.email}</p>
+                                        </div>
+                                    </td>
                                     <td className="p-3">
                                         <div>
                                             <p>{booking.borrower.name || "Unnamed"}</p>

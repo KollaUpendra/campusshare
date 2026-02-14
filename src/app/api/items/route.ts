@@ -40,10 +40,25 @@ export async function POST(req: Request) {
             return new NextResponse("Missing required fields", { status: 400 });
         }
 
+        // Input length limits to prevent abuse
+        if (title.length > 200) {
+            return new NextResponse("Title too long (max 200 chars)", { status: 400 });
+        }
+        if (description && description.length > 2000) {
+            return new NextResponse("Description too long (max 2000 chars)", { status: 400 });
+        }
+
+        // Validate day names
+        const validDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+        const invalidDays = availability.filter((day: string) => !validDays.includes(day));
+        if (invalidDays.length > 0) {
+            return new NextResponse(`Invalid days: ${invalidDays.join(", ")}`, { status: 400 });
+        }
+
         const newItem = await db.item.create({
             data: {
-                title,
-                description,
+                title: title.trim(),
+                description: description?.trim() || "",
                 price,
                 ownerId: session.user.id,
                 availability: {
@@ -83,8 +98,8 @@ export async function GET(req: Request) {
                 status: "active",
                 ...(query ? {
                     OR: [
-                        { title: { contains: query } },
-                        { description: { contains: query } },
+                        { title: { contains: query, mode: 'insensitive' } },
+                        { description: { contains: query, mode: 'insensitive' } },
                     ]
                 } : {})
             },

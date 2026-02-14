@@ -29,15 +29,16 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import db from "@/lib/db"
 import CredentialsProvider from "next-auth/providers/credentials"
 
-// Limit sign-ins to a specific domain for campus security
-const ALLOWED_DOMAIN = process.env.ALLOWED_DOMAIN || "@yourcollege.edu";
+// ALLOWED_DOMAIN is read at runtime in the signIn callback below
 
 /**
  * NextAuth configuration object.
  * Defines providers, adapters, and callback logic for authentication flows.
  */
-// Debugging environment
-console.log(`[Auth] Initializing NextAuth. NODE_ENV=${process.env.NODE_ENV}`);
+// Log only in dev to avoid leaking env info in production
+if (process.env.NODE_ENV !== 'production') {
+    console.log(`[Auth] Initializing NextAuth. NODE_ENV=${process.env.NODE_ENV}`);
+}
 
 // Detect if running on HTTPS (production)
 const useSecureCookies = (process.env.NEXTAUTH_URL ?? '').startsWith('https://');
@@ -128,7 +129,9 @@ export const authOptions: NextAuthOptions = {
             const allowedDomain = (process.env.ALLOWED_DOMAIN || "@vnrvjiet.in").replace(/^['"]|['"]$/g, '').toLowerCase();
             const userEmail = user.email?.toLowerCase();
 
-            console.log(`[Auth] SignIn Check: Email=${user.email}, AllowedDomain=${allowedDomain}`);
+            if (process.env.NODE_ENV !== 'production') {
+                console.log(`[Auth] SignIn Check: Email=${user.email}, AllowedDomain=${allowedDomain}`);
+            }
 
             // DOMAIN RESTRICTION LOGIC
             // Only allow emails from the specified academic domain.
