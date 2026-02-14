@@ -101,7 +101,8 @@ export const authOptions: NextAuthOptions = {
                 return true;
             }
 
-            const allowedDomain = (process.env.ALLOWED_DOMAIN || "@vnrvjiet.in").toLowerCase();
+            // Ensure no quotes from env var and default to vnrvjiet.in if missing
+            const allowedDomain = (process.env.ALLOWED_DOMAIN || "@vnrvjiet.in").replace(/^['"]|['"]$/g, '').toLowerCase();
             const userEmail = user.email?.toLowerCase();
 
             console.log(`[Auth] SignIn Check: Email=${user.email}, AllowedDomain=${allowedDomain}`);
