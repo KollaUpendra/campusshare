@@ -24,28 +24,55 @@ interface BookingRequestButtonProps {
     itemId: string;
     price: number;
     availableDays: string[];
+    type?: string; // 'Rent' | 'Sell'
 }
 
-export default function BookingRequestButton({ itemId, price, availableDays }: BookingRequestButtonProps) {
-    const [date, setDate] = useState<Date>();
+export default function BookingRequestButton({ itemId, price, availableDays, type = "Rent" }: BookingRequestButtonProps) {
+    const [date, setDate] = useState<Date | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const router = useRouter();
     const { data: session } = useSession();
 
     // Helper to check if a date is valid based on availableDays
-    const isDateDisabled = (date: Date) => {
-        const dayName = format(date, "EEEE"); // "Monday", "Tuesday"...
-        // Disable pure past dates (today is OK for now)
-        if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
+    const isDateDisabled = (d: Date) => {
+        const dayName = format(d, "EEEE"); // "Monday", "Tuesday"...
+        // Disable pure past dates
+        if (d < new Date(new Date().setHours(0, 0, 0, 0))) return true;
         // Disable if day of week not in availability
         return !availableDays.includes(dayName);
     };
 
-    const handleBooking = async () => {
+    const handleBuy = async () => {
+        if (!confirm(`Are you sure you want to buy this item for ${price} coins?`)) return;
+        
+        setIsLoading(true);
+        try {
+            const res = await fetch("/api/transactions/buy", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ itemId }),
+            });
+
+            if (!res.ok) {
+                const msg = await res.text();
+                throw new Error(msg);
+            }
+
+            alert("Purchase successful!");
+            router.push("/profile"); // Redirect to profile or orders page
+            router.refresh();
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Purchase failed";
+            alert(message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleRentRequest = async () => {
         if (!date) return;
         if (!session) {
-            // Redirect to login or show alert
             alert("Please sign in to book items");
             return;
         }
@@ -77,11 +104,21 @@ export default function BookingRequestButton({ itemId, price, availableDays }: B
         }
     };
 
+    if (type === "Sell") {
+        return (
+            <Button className="w-full bg-green-600 hover:bg-green-700 text-white" size="lg" onClick={handleBuy} disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Buy Now for {price} Coins
+            </Button>
+        );
+    }
+
+    // Rent Logic
     return (
         <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
                 <Button className="w-full" size="lg">
-                    Request for ₹{price}
+                    Request for {price} Coins/Day
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="center">
@@ -92,14 +129,6 @@ export default function BookingRequestButton({ itemId, price, availableDays }: B
                             Pick an available day to borrow this item.
                         </p>
                     </div>
-                    {/* Simplified Date Input for Minimal Dependencies if Calendar component missing, 
-                        BUT assuming user has basic shadcn setup. 
-                        If Calendar is missing, we fallback to native input. 
-                        Let's use native input for robustness unless we verify Calendar exists.
-                        Wait, I didn't verify UI folder for Calendar... 
-                        I'll use a safer HTML date input approach to avoid missing component errors 
-                        since I only saw basic UI components.
-                    */}
                     <div className="flex flex-col gap-2">
                         <input
                             type="date"
@@ -111,12 +140,18 @@ export default function BookingRequestButton({ itemId, price, availableDays }: B
                                     setDate(undefined);
                                     return;
                                 }
-                                const [y, m, d] = val.split('-').map(Number);
-                                const localDate = new Date(y, m - 1, d);
-                                setDate(localDate);
+                                const dateObj = new Date(val);
+                                // Adjust specifically for input date string returning UTC midnight usually?
+                                // Actually input type="date" value is YYYY-MM-DD.
+                                // New Date("YYYY-MM-DD") is usually UTC. 
+                                // We want local day comparison.
+                                // A simple way is to just keep the string or parse carefully.
+                                // But my isDateDisabled uses Date object.
+                                // Let's ensure we work with the day selected.
+                                setDate(dateObj); 
                             }}
                         />
-                        {date && isDateDisabled(date) && (
+                         {date && isDateDisabled(date) && (
                             <p className="text-xs text-red-500">
                                 Item not available on {format(date, "EEEE")}
                             </p>
@@ -129,7 +164,7 @@ export default function BookingRequestButton({ itemId, price, availableDays }: B
                     </div>
 
                     <Button
-                        onClick={handleBooking}
+                        onClick={handleRentRequest}
                         disabled={!date || isDateDisabled(date) || isLoading}
                         className="w-full"
                     >

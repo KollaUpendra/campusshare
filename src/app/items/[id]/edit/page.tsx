@@ -43,9 +43,14 @@ export default async function EditItemPage(props: { params: Promise<{ id: string
         redirect("/");
     }
 
+    const cloudinaryConfig = {
+        cloudName: process.env.CLOUDINARY_CLOUD_NAME!,
+        apiKey: process.env.CLOUDINARY_API_KEY!,
+    };
+
     return (
         <div className="container mx-auto px-4 py-8">
-            <AddItemForm initialData={item} />
+            <AddItemForm initialData={item} cloudinaryConfig={cloudinaryConfig} />
         </div>
     );
 }

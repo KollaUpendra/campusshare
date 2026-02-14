@@ -1,71 +1,49 @@
+import db from "@/lib/db";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import BlockUserButton from "@/components/admin/BlockUserButton"; // We will create this
+
 export const dynamic = "force-dynamic";
 
-import db from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { Badge } from "@/components/ui/badge";
-import AdminUserActions from "@/components/admin/AdminUserActions";
-
 export default async function AdminUsersPage() {
-    const session = await getServerSession(authOptions);
     const users = await db.user.findMany({
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: "desc" }
     });
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">User Management</h1>
-                <Badge variant="outline">{users.length} users</Badge>
-            </div>
-
+            <h1 className="text-2xl font-bold">User Management</h1>
             <div className="border rounded-lg bg-card overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="bg-muted/50 border-b">
-                                <th className="text-left p-3 font-medium">User</th>
-                                <th className="text-left p-3 font-medium">Role</th>
-                                <th className="text-left p-3 font-medium">Status</th>
-                                <th className="text-left p-3 font-medium">Joined</th>
-                                <th className="text-right p-3 font-medium">Actions</th>
+                <table className="w-full text-sm text-left">
+                    <thead className="bg-muted text-muted-foreground">
+                        <tr>
+                            <th className="p-4 font-medium">Name</th>
+                            <th className="p-4 font-medium">Email</th>
+                            <th className="p-4 font-medium">Role</th>
+                            <th className="p-4 font-medium">Status</th>
+                            <th className="p-4 font-medium">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                        {users.map((user) => (
+                            <tr key={user.id} className="hover:bg-muted/50">
+                                <td className="p-4 font-medium">{user.name}</td>
+                                <td className="p-4 text-muted-foreground">{user.email}</td>
+                                <td className="p-4">
+                                    <Badge variant="outline">{user.role}</Badge>
+                                </td>
+                                <td className="p-4">
+                                     <Badge variant={user.isBlocked ? "destructive" : "secondary"}>
+                                        {user.isBlocked ? "Blocked" : "Active"}
+                                     </Badge>
+                                </td>
+                                <td className="p-4">
+                                    <BlockUserButton userId={user.id} isBlocked={user.isBlocked} />
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {users.map((user) => (
-                                <tr key={user.id} className="border-b last:border-0 hover:bg-muted/30">
-                                    <td className="p-3">
-                                        <div>
-                                            <p className="font-medium">{user.name || "Unnamed"}</p>
-                                            <p className="text-xs text-muted-foreground">{user.email}</p>
-                                        </div>
-                                    </td>
-                                    <td className="p-3">
-                                        <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                                            {user.role}
-                                        </Badge>
-                                    </td>
-                                    <td className="p-3">
-                                        <Badge variant={user.isBlocked ? "destructive" : "outline"}>
-                                            {user.isBlocked ? "Blocked" : "Active"}
-                                        </Badge>
-                                    </td>
-                                    <td className="p-3 text-muted-foreground text-xs">
-                                        {new Date(user.createdAt).toLocaleDateString()}
-                                    </td>
-                                    <td className="p-3 text-right">
-                                        <AdminUserActions
-                                            userId={user.id}
-                                            currentRole={user.role}
-                                            isBlocked={user.isBlocked}
-                                            isSelf={user.id === session?.user?.id}
-                                        />
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                        ))}
+                    </tbody>
+                </table>
             </div>
         </div>
     );

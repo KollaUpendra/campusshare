@@ -125,22 +125,8 @@ export const authOptions: NextAuthOptions = {
                 }
             }
 
-            // Ensure no quotes from env var and default to vnrvjiet.in if missing
-            const allowedDomain = (process.env.ALLOWED_DOMAIN || "@vnrvjiet.in").replace(/^['"]|['"]$/g, '').toLowerCase();
-            const userEmail = user.email?.toLowerCase();
-
-            if (process.env.NODE_ENV !== 'production') {
-                console.log(`[Auth] SignIn Check: Email=${user.email}, AllowedDomain=${allowedDomain}`);
-            }
-
-            // DOMAIN RESTRICTION LOGIC
-            // Only allow emails from the specified academic domain.
-            if (userEmail?.endsWith(allowedDomain)) {
-                return true;
-            }
-
-            console.warn(`[Auth] Access Denied: ${user.email} does not match domain ${allowedDomain}`);
-            return false; // Rejects login for external emails
+            // Allow any email domain (removed restriction logic)
+            return true;
         },
 
         /**
@@ -151,50 +137,35 @@ export const authOptions: NextAuthOptions = {
          * @param {object} user - The user object (only available on initial sign-in).
          * @returns {Promise<object>} The modified token.
          */
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger, session }) {
             try {
-                // On initial sign-in, `user` is provided by the adapter/provider.
                 if (user) {
                     token.id = user.id;
-                    // Assign default role if not present
-                    token.role = (user as { role?: string }).role || "student";
+                    token.role = (user as any).role || "student";
                 }
 
-                // RE-FETCH ROLE IF MISSING
-                // If the token exists but lacks a role (edge case: manual invalidation),
-                // fetch it from the database to ensure consistency.
-                // Optimization: We check !token.role to avoid hitting the DB on every single request.
-                if (!token.role && token.id) {
+                // Always fetch latest data (coins changes frequently)
+                if (token.id) {
                     const dbUser = await db.user.findUnique({
                         where: { id: token.id as string },
-                        select: { role: true },
+                        select: { role: true, coins: true },
                     });
-                    token.role = dbUser?.role || "student";
+                    if (dbUser) {
+                        token.role = dbUser.role;
+                        token.coins = dbUser.coins;
+                    }
                 }
             } catch (error) {
                 console.error("JWT Callback Error:", error);
-                // Don't crash, just return the token as-is or with safe defaults
-                token.role = token.role || "student";
             }
             return token;
         },
 
-        /**
-         * Session Callback
-         * Exposes the user's ID and Role to the client-side session object.
-         * 
-         * @param {object} session - The session object to be returned to the client.
-         * @param {object} token - The JWT token containing the user's claims.
-         * @returns {Promise<object>} The modified session object.
-         */
         async session({ session, token }) {
-            try {
-                if (session.user) {
-                    session.user.id = token.id as string;
-                    session.user.role = token.role as string;
-                }
-            } catch (error) {
-                console.error("Session Callback Error:", error);
+            if (session.user) {
+                session.user.id = token.id as string;
+                session.user.role = token.role as string;
+                (session.user as any).coins = token.coins as number;
             }
             return session;
         },

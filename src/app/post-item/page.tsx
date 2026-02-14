@@ -14,6 +14,11 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export default function PostItemPage() {
+    const cloudinaryConfig = {
+        cloudName: process.env.CLOUDINARY_CLOUD_NAME!,
+        apiKey: process.env.CLOUDINARY_API_KEY!,
+    };
+
     return (
         <div className="max-w-md mx-auto">
             <div className="flex items-center gap-2 mb-4">
@@ -24,7 +29,7 @@ export default function PostItemPage() {
                 </Button>
                 <h1 className="text-xl font-bold">List an Item</h1>
             </div>
-            <AddItemForm />
+            <AddItemForm cloudinaryConfig={cloudinaryConfig} />
         </div>
     );
 }

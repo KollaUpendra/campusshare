@@ -65,6 +65,12 @@ model User {
   image         String?
   role          String    @default("student") // 'student' | 'admin'
   isBlocked     Boolean   @default(false)
+  
+  // New Profile Fields
+  coins         Float     @default(100.0)
+  bio           String?
+  phoneNumber   String?
+  
   createdAt     DateTime  @default(now())
 
   accounts Account[]
@@ -73,6 +79,11 @@ model User {
   items         Item[]         @relation("UserItems")
   bookings      Booking[]      @relation("UserBookings")
   notifications Notification[]
+  
+  // New Relations
+  sentTransactions     Transaction[] @relation("SentTransactions")
+  receivedTransactions Transaction[] @relation("ReceivedTransactions")
+  wishlist             Wishlist[]
 }
 
 model Item {
@@ -80,11 +91,26 @@ model Item {
   title        String
   description  String
   price        Float
-  status       String         @default("active") // 'active' | 'inactive'
+  image        String?        // Main thumbnail (kept for backward compatibility)
+  
+  // New Item Fields
+  images       String[]       // format: "url1", "url2"
+  category     String         @default("Other")
+  condition    String         @default("Used") // 'New' | 'Like New' | 'Good' | 'Fair' | 'Poor'
+  type         String         @default("Rent") // 'Sell' | 'Rent'
+  
+  status       String         @default("active") // 'active' | 'inactive' | 'sold'
+  
   ownerId      String
   owner        User           @relation("UserItems", fields: [ownerId], references: [id], onDelete: Cascade)
+  
   availability Availability[]
   bookings     Booking[]
+  
+  // New Relations
+  transactions Transaction[]
+  wishlistedBy Wishlist[]
+  
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 }
@@ -116,4 +142,37 @@ model Notification {
   message   String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+// New Models
+
+model Transaction {
+  id          String   @id @default(cuid())
+  amount      Float
+  type        String   // 'PURCHASE', 'RENT', 'DEPOSIT', 'WITHDRAWAL'
+  status      String   @default("COMPLETED")
+  
+  fromUserId  String?
+  fromUser    User?    @relation("SentTransactions", fields: [fromUserId], references: [id])
+  
+  toUserId    String?
+  toUser      User?    @relation("ReceivedTransactions", fields: [toUserId], references: [id])
+  
+  itemId      String?
+  item        Item?    @relation(fields: [itemId], references: [id])
+  
+  createdAt   DateTime @default(now())
+}
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, itemId])
 }
