@@ -101,14 +101,18 @@ export const authOptions: NextAuthOptions = {
                 return true;
             }
 
+            const allowedDomain = (process.env.ALLOWED_DOMAIN || "@vnrvjiet.in").toLowerCase();
+            const userEmail = user.email?.toLowerCase();
+
+            console.log(`[Auth] SignIn Check: Email=${user.email}, AllowedDomain=${allowedDomain}`);
+
             // DOMAIN RESTRICTION LOGIC
             // Only allow emails from the specified academic domain.
-            if (user.email?.endsWith(ALLOWED_DOMAIN)) {
+            if (userEmail?.endsWith(allowedDomain)) {
                 return true;
             }
-            // Allow localhost debugging with specific test email if needed
-            // if (process.env.NODE_ENV === "development") return true
 
+            console.warn(`[Auth] Access Denied: ${user.email} does not match domain ${allowedDomain}`);
             return false; // Rejects login for external emails
         },
 
