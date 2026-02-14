@@ -39,16 +39,27 @@ const ALLOWED_DOMAIN = process.env.ALLOWED_DOMAIN || "@yourcollege.edu";
 // Debugging environment
 console.log(`[Auth] Initializing NextAuth. NODE_ENV=${process.env.NODE_ENV}`);
 
+// Detect if running on HTTPS (production)
+const useSecureCookies = (process.env.NEXTAUTH_URL ?? '').startsWith('https://');
+const cookiePrefix = useSecureCookies ? '__Secure-' : '';
+
 export const authOptions: NextAuthOptions = {
     // connect to Prisma DB for user/session storage
     adapter: PrismaAdapter(db) as Adapter,
     session: {
-        // STRATEGY: "jwt"
-        // Required for middleware compatibility.
-        // - "database" strategy does not populate req.nextauth.token in middleware.
-        // - "jwt" strategy allows us to access the token and user role in middleware
-        //   to perform efficient role-based redirects (e.g., protecting /admin routes).
         strategy: "jwt",
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+    },
+    cookies: {
+        sessionToken: {
+            name: `${cookiePrefix}next-auth.session-token`,
+            options: {
+                httpOnly: true,
+                sameSite: 'lax',
+                path: '/',
+                secure: useSecureCookies,
+            },
+        },
     },
     providers: [
         /**
@@ -114,14 +125,6 @@ export const authOptions: NextAuthOptions = {
             }
 
             console.warn(`[Auth] Access Denied: ${user.email} does not match domain ${allowedDomain}`);
-
-            // EMERGENCY BYPASS FOR DEBUGGING
-            const bypass = true;
-            if (bypass) {
-                console.warn("[Auth] BYPASSING DOMAIN CHECK FOR DEBUGGING");
-                return true;
-            }
-
             return false; // Rejects login for external emails
         },
 
