@@ -21,6 +21,7 @@ import "./globals.css";
 import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
 import Providers from "@/components/auth/Providers";
+import DevToolsHider from "@/components/layout/DevToolsHider";
 import Link from "next/link";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -53,7 +54,7 @@ export const viewport: Viewport = {
  * @param {React.ReactNode} props.children - The page content to be rendered.
  * @returns {JSX.Element} The root html structure.
  */
-import DevToolsHider from "@/components/layout/DevToolsHider";
+
 
 export default function RootLayout({
   children,
