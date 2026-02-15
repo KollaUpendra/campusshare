@@ -1,0 +1,85 @@
+﻿Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+node.exe : ΓÜá The "middleware" file 
+convention is deprecated. Please use 
+"proxy" instead. Learn more: https://
+nextjs.org/docs/messages/middleware-t
+o-proxy
+At line:1 char:1
++ & "C:\Upendra\Softwares\nodejs/node
+.exe" "C:\Users\kolla\AppData\Roam 
+...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpe 
+   cified: (ΓÜá The "middle...lewar  
+  e-to-proxy:String) [], RemoteExc   
+ eption
+    + FullyQualifiedErrorId : Native 
+   CommandError
+ 
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 4.6s
+  Running TypeScript ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/25) ...
+  Generating static pages using 15 workers (6/25) 
+  Generating static pages using 15 workers (12/25) 
+  Generating static pages using 15 workers (18/25) 
+Γ£ô Generating static pages using 15 workers (25/25) in 454.8ms
+  Finalizing page optimization ...
+
+Route (app)
+Γöî ╞Æ /
+Γö£ Γùï /_not-found
+Γö£ ╞Æ /admin
+Γö£ ╞Æ /admin/bookings
+Γö£ ╞Æ /admin/items
+Γö£ ╞Æ /admin/users
+Γö£ ╞Æ /api/admin/analytics
+Γö£ ╞Æ /api/admin/booking/rollback/[bookingId]
+Γö£ ╞Æ /api/admin/bookings
+Γö£ ╞Æ /api/admin/complaint/fine/[complaintId]
+Γö£ ╞Æ /api/admin/complaint/reject/[id]
+Γö£ ╞Æ /api/admin/complaint/verify/[id]
+Γö£ ╞Æ /api/admin/complaints
+Γö£ ╞Æ /api/admin/items
+Γö£ ╞Æ /api/admin/user/block/[userId]
+Γö£ ╞Æ /api/admin/user/unblock/[userId]
+Γö£ ╞Æ /api/admin/users
+Γö£ ╞Æ /api/admin/users/block
+Γö£ ╞Æ /api/auth/[...nextauth]
+Γö£ ╞Æ /api/bookings
+Γö£ ╞Æ /api/bookings/[id]
+Γö£ ╞Æ /api/bookings/[id]/accept
+Γö£ ╞Æ /api/bookings/[id]/pay
+Γö£ ╞Æ /api/bookings/[id]/reject
+Γö£ ╞Æ /api/complaints
+Γö£ ╞Æ /api/items
+Γö£ ╞Æ /api/items/[id]
+Γö£ ╞Æ /api/notifications
+Γö£ ╞Æ /api/owner/bookings
+Γö£ ╞Æ /api/sign-cloudinary
+Γö£ ╞Æ /api/transactions/buy
+Γö£ ╞Æ /api/user/my-rentals
+Γö£ ╞Æ /api/user/profile
+Γö£ ╞Æ /api/wishlist
+Γö£ Γùï /dashboard/bookings
+Γö£ ╞Æ /items/[id]
+Γö£ ╞Æ /items/[id]/edit
+Γö£ ╞Æ /my-items
+Γö£ Γùï /post-item
+Γö£ Γùï /privacy
+Γö£ ╞Æ /profile
+Γö£ Γùï /search
+Γö£ Γùï /terms
+Γö£ ╞Æ /transactions
+Γöö ╞Æ /wishlist
+
+
+╞Æ Proxy (Middleware)
+
+Γùï  (Static)   prerendered as static content
+╞Æ  (Dynamic)  server-rendered on demand
+

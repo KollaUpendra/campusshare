@@ -48,7 +48,7 @@ export default function BookingsPage() {
 
     useEffect(() => {
         if (status === "unauthenticated") {
-            router.push("/api/auth/signin");
+            router.push("/");
             return;
         }
         if (status === "authenticated") {
@@ -138,8 +138,8 @@ export default function BookingsPage() {
                                     <CardTitle className="text-base truncate">{booking.item.title}</CardTitle>
                                 </Link>
                                 <Badge variant={
-                                    booking.status === "accepted" ? "default" :
-                                        booking.status === "rejected" ? "destructive" : "secondary"
+                                    ["accepted", "ACCEPTED"].includes(booking.status) ? "default" :
+                                        ["rejected", "REJECTED"].includes(booking.status) ? "destructive" : "secondary"
                                 }>
                                     {booking.status}
                                 </Badge>
@@ -163,7 +163,7 @@ export default function BookingsPage() {
                                     </div>
                                 )}
 
-                                {activeTab === "incoming" && booking.status === "pending" && (
+                                {activeTab === "incoming" && ["pending", "PENDING"].includes(booking.status) && (
                                     <div className="flex gap-2 mt-4">
                                         <Button
                                             size="sm"
@@ -184,26 +184,26 @@ export default function BookingsPage() {
                                 )}
 
                                 {activeTab === "outgoing" && (booking.status === "accepted" || booking.status === "ACCEPTED") && (
-                                     <div className="mt-4">
-                                         <Button 
-                                            className="w-full bg-green-600 hover:bg-green-700" 
+                                    <div className="mt-4">
+                                        <Button
+                                            className="w-full bg-green-600 hover:bg-green-700"
                                             size="sm"
                                             onClick={async () => {
-                                                if(!confirm(`Pay ${booking.item.price} coins now?`)) return;
+                                                if (!confirm(`Pay ${booking.item.price} coins now?`)) return;
                                                 try {
                                                     const res = await fetch(`/api/bookings/${booking.id}/pay`, { method: "POST" });
-                                                    if(!res.ok) throw new Error(await res.text());
+                                                    if (!res.ok) throw new Error(await res.text());
                                                     alert("Payment Successful!");
                                                     fetchBookings(); // Refresh list
-                                                    router.refresh(); 
-                                                } catch(e) {
+                                                    router.refresh();
+                                                } catch (e) {
                                                     alert(e instanceof Error ? e.message : "Payment failed");
                                                 }
                                             }}
-                                         >
+                                        >
                                             Pay Now ({booking.item.price} Coins)
-                                         </Button>
-                                     </div>
+                                        </Button>
+                                    </div>
                                 )}
                             </CardContent>
                         </Card>
