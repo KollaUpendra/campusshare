@@ -20,7 +20,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
-import Providers from "@/components/auth/Providers";
+import Providers from "@/features/auth/components/Providers";
 import DevToolsHider from "@/components/layout/DevToolsHider";
 import Link from "next/link";
 

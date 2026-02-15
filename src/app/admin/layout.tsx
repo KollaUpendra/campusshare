@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/config/auth.config";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 

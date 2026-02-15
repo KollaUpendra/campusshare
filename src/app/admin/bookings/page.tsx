@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import db from "@/lib/db";
+import db from "@/infrastructure/db/client";
 import { Badge } from "@/components/ui/badge";
 
 export default async function AdminBookingsPage() {

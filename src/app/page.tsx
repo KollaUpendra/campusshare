@@ -14,11 +14,11 @@
 
 export const dynamic = "force-dynamic";
 
-import ItemCard from "@/components/items/ItemCard";
+import ItemCard from "@/features/items/components/ItemCard";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Search } from "lucide-react";
 import Link from "next/link";
-import db from "@/lib/db";
+import db from "@/infrastructure/db/client";
 async function getItems(query?: string, category?: string, type?: string) {
   try {
     const where: any = { status: { in: ["active", "AVAILABLE"] } }; // Fix: include items set back to AVAILABLE after booking rejection
@@ -61,7 +61,7 @@ async function getItems(query?: string, category?: string, type?: string) {
 }
 
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/config/auth.config";
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ query?: string; category?: string; type?: string }> }) {
   const { query, category, type } = await searchParams;

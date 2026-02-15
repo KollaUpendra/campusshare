@@ -1,11 +1,11 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import db from "@/lib/db";
+import { authOptions } from "@/config/auth.config";
+import db from "@/infrastructure/db/client";
 import { redirect } from "next/navigation";
 import { Package } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import ItemCard from "@/components/items/ItemCard";
+import ItemCard from "@/features/items/components/ItemCard";
 
 export const dynamic = "force-dynamic";
 

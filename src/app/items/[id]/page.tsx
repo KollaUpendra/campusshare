@@ -13,13 +13,13 @@
 export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
-import db from "@/lib/db";
+import db from "@/infrastructure/db/client";
 import { User, Calendar, DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import BookingRequestButton from "@/components/items/BookingRequestButton";
-import EditItemActions from "@/components/items/EditItemActions";
+import BookingRequestButton from "@/features/items/components/BookingRequestButton";
+import EditItemActions from "@/features/items/components/EditItemActions";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/config/auth.config";
 
 type Props = {
     params: Promise<{ id: string }>;

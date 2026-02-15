@@ -16,10 +16,10 @@
  */
 
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import db from "@/lib/db";
+import { authOptions } from "@/config/auth.config";
+import db from "@/infrastructure/db/client";
 import { redirect, notFound } from "next/navigation";
-import AddItemForm from "@/components/items/AddItemForm";
+import AddItemForm from "@/features/items/components/AddItemForm";
 
 export default async function EditItemPage(props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
