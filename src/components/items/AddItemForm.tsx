@@ -137,8 +137,8 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
         const files = e.target.files;
         if (!files || files.length === 0) return;
 
-        if (imageUrls.length + files.length > 5) {
-            alert("You can upload a maximum of 5 images.");
+        if (imageUrls.length + files.length > 1) {
+            alert("You can only upload 1 image.");
             return;
         }
 
@@ -182,6 +182,9 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
 
                 if (data.secure_url) {
                     newUrls.push(data.secure_url);
+                } else {
+                    console.error("Cloudinary upload failed", data);
+                    alert("Upload failed. Please try again. " + (data.error?.message || ""));
                 }
             }
 
@@ -191,7 +194,7 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
 
         } catch (error) {
             console.error("Upload failed:", error);
-            alert("Image upload failed");
+            alert("Image upload failed: " + (error instanceof Error ? error.message : "Unknown error"));
         } finally {
             setIsSubmitting(false);
         }
@@ -318,7 +321,7 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
 
             {/* Image Upload Section */}
             <div className="space-y-2">
-                <label className="text-sm font-medium">Product Images (Max 5)</label>
+                <label className="text-sm font-medium">Product Image</label>
                 <div className="border border-dashed rounded-lg p-4">
                     <div className="flex flex-wrap justify-center gap-4 mb-4">
                         {imageUrls.map((url, index) => (
@@ -338,22 +341,21 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
                                 </button>
                             </div>
                         ))}
-                        {imageUrls.length < 5 && (
+                        {imageUrls.length < 1 && (
                             <div className="w-24 h-24 flex items-center justify-center bg-muted rounded-lg border cursor-pointer hover:bg-muted/80 relative">
                                 <span className="text-2xl text-muted-foreground">+</span>
                                 <input
                                     type="file"
                                     accept="image/*"
-                                    multiple
                                     onChange={handleImageUpload}
-                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
                                     title="Upload images"
                                 />
                             </div>
                         )}
                     </div>
                     <p className="text-xs text-muted-foreground text-center">
-                        Upload up to 5 images. First image will be the main thumbnail.
+                        Upload an image of your product.
                     </p>
                 </div>
             </div>

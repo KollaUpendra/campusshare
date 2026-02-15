@@ -14,7 +14,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Search, PlusCircle, CalendarCheck, User } from "lucide-react"
+import { Home, PlusCircle, CalendarCheck, User, Package } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 /**
@@ -31,9 +31,9 @@ export default function BottomNav() {
             icon: Home,
         },
         {
-            label: "Search",
-            href: "/search",
-            icon: Search,
+            label: "My Items",
+            href: "/my-items",
+            icon: Package,
         },
         {
             label: "Post",
