@@ -48,6 +48,18 @@ export default async function ItemDetailsPage(props: Props) {
 
     const isOwner = session?.user?.id === item.ownerId;
 
+    let existingBooking = null;
+    if (session?.user) {
+        existingBooking = await db.booking.findFirst({
+            where: {
+                itemId: item.id,
+                borrowerId: session.user.id,
+                status: { notIn: ["REJECTED", "CANCELLED", "rejected", "cancelled"] }
+            },
+            orderBy: { createdAt: "desc" }
+        });
+    }
+
     return (
         <div className="max-w-2xl mx-auto space-y-6">
             {/* Image Gallery */}
@@ -124,12 +136,18 @@ export default async function ItemDetailsPage(props: Props) {
                 )}
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t md:relative md:border-0 md:bg-transparent md:p-0">
+            <div className="fixed bottom-16 left-0 right-0 p-4 bg-background border-t md:relative md:border-0 md:bg-transparent md:p-0 md:bottom-0 z-10">
                 <div className="max-w-2xl mx-auto">
                     {isOwner ? (
                         <EditItemActions itemId={item.id} />
                     ) : (
-                        <BookingRequestButton itemId={item.id} price={item.price} availableDays={item.availability.map(a => a.dayOfWeek)} />
+                        <BookingRequestButton 
+                            itemId={item.id} 
+                            price={item.price} 
+                            availableDays={item.availability.map((a: any) => a.dayOfWeek)}
+                            type={item.type}
+                            currentRequest={existingBooking}
+                        />
                     )}
                 </div>
             </div>

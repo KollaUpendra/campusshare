@@ -52,6 +52,8 @@ export const viewport: Viewport = {
  * @param {React.ReactNode} props.children - The page content to be rendered.
  * @returns {JSX.Element} The root html structure.
  */
+import DevToolsHider from "@/components/layout/DevToolsHider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -60,6 +62,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <DevToolsHider />
         <Providers>
           <div className="flex min-h-screen flex-col bg-muted/30">
             {/* Common Header across all pages */}

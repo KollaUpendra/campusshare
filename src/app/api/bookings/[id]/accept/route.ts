@@ -47,71 +47,19 @@ export async function POST(
         const rentCost = (item as any).rentCoins || 0;
         const renter = booking.borrower;
 
-        // Re-validate renter balance: coins >= rentCost + 500 (must keep 500 after payment)
-        const renterCoins = (renter as any).coins || 0;
-        if (renterCoins < rentCost + 500) {
-            return new NextResponse("Renter has insufficient funds. Minimum balance of 500 coins must remain after booking.", { status: 400 });
-        }
-
-        // --- ATOMIC TRANSACTION with wallet ledger ---
-        const result = await db.$transaction(async (tx: any) => {
-            // 1. Deduct from Renter
-            const updatedRenter = await tx.user.update({
-                where: { id: renter.id },
-                data: { coins: { decrement: rentCost } }
-            });
-
-            // 2. Add to Owner
-            const updatedOwner = await tx.user.update({
-                where: { id: session.user.id },
-                data: { coins: { increment: rentCost } }
-            });
-
-            // 3. Create Wallet Transaction — Renter Debit
-            await tx.transaction.create({
-                data: {
-                    amount: -rentCost,
-                    type: "RENT_PAYMENT",
-                    fromUserId: renter.id,
-                    toUserId: session.user.id,
-                    itemId: item.id,
-                    referenceId: bookingId,
-                    balanceAfter: updatedRenter.coins,
-                    status: "COMPLETED"
-                }
-            });
-
-            // 4. Create Wallet Transaction — Owner Credit
-            await tx.transaction.create({
-                data: {
-                    amount: rentCost,
-                    type: "RENT_PAYMENT",
-                    fromUserId: renter.id,
-                    toUserId: session.user.id,
-                    itemId: item.id,
-                    referenceId: bookingId,
-                    balanceAfter: updatedOwner.coins,
-                    status: "COMPLETED"
-                }
-            });
-
-            // 5. Update Booking Status -> ACCEPTED
+        // --- ATOMIC TRANSACTION: STATUS UPDATE ONLY ---
+        const result = await db.$transaction(async (tx) => {
+            // 1. Update Booking Status -> ACCEPTED
             const updatedBooking = await tx.booking.update({
                 where: { id: bookingId },
                 data: { status: "ACCEPTED" }
             });
 
-            // 6. Update Item Status -> BOOKED
-            await tx.item.update({
-                where: { id: item.id },
-                data: { status: "BOOKED" }
-            });
-
-            // 7. Notify Renter
+            // 2. Notify Renter
             await tx.notification.create({
                 data: {
                     userId: renter.id,
-                    message: `Your booking for ${item.title} has been ACCEPTED! ${rentCost} coins deducted.`
+                    message: `Your request for ${item.title} has been ACCEPTED! Please ensure you have enough balance and proceed to Pay.`
                 }
             });
 

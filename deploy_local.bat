@@ -2,10 +2,10 @@
 echo HOST: %COMPUTERNAME%
 echo USER: %USERNAME%
 echo ==============================================
-echo   CampusShare Platform - Local Deployer
+echo   CampusShare Platform - Local Dev Launcher
 echo ==============================================
 
-echo [1/4] Installing dependencies...
+echo [1/2] Installing/Updating dependencies...
 call npm install
 if %errorlevel% neq 0 (
     echo [ERROR] npm install failed.
@@ -14,28 +14,10 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo [2/4] Setting up database...
-call npx prisma generate
-call npx prisma db push
-if %errorlevel% neq 0 (
-    echo [ERROR] Database setup failed.
-    pause
-    exit /b %errorlevel%
-)
-
-echo.
-echo [3/4] Building application...
-call npm run build
-if %errorlevel% neq 0 (
-    echo [ERROR] Build failed.
-    pause
-    exit /b %errorlevel%
-)
-
-echo.
-echo [4/4] Starting production server...
+echo [2/2] Starting Development Server...
 echo The app will start at http://localhost:3000
+echo Changes will be reflected immediately.
 echo Press Ctrl+C to stop.
 echo.
-call npm start
+call npm run dev
 pause
