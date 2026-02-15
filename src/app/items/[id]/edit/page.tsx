@@ -50,6 +50,7 @@ export default async function EditItemPage(props: { params: Promise<{ id: string
 
     return (
         <div className="container mx-auto px-4 py-8">
+            <h1 className="text-2xl font-bold text-center mb-6">Edit Item</h1>
             <AddItemForm initialData={item} cloudinaryConfig={cloudinaryConfig} />
         </div>
     );

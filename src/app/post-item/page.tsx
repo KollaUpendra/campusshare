@@ -27,7 +27,7 @@ export default function PostItemPage() {
                         <ArrowLeft className="h-4 w-4" />
                     </Link>
                 </Button>
-                <h1 className="text-xl font-bold">List an Item</h1>
+                <h1 className="text-xl font-bold">Add an Item</h1>
             </div>
             <AddItemForm cloudinaryConfig={cloudinaryConfig} />
         </div>
