@@ -1,134 +1,153 @@
-# 🎓 CampusShare Platform
+# CampusShare Platform
+
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)
+![Next.js](https://img.shields.io/badge/Next.js-16-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 
 > **A secure, peer-to-peer rental marketplace tailored for university communities.**
 
-**CampusShare** is a modern full-stack web application designed to facilitate resource sharing among students. It provides a trusted environment where verified users can list items for rent, browse available inventory, and manage bookings seamlessly within their campus network.
+---
 
-## ✨ Key Features
+## 📖 Architecture Overview
 
-- **🔐 Domain-Restricted Authentication**
-  - Secure sign-in via Google OAuth (powered by NextAuth.js).
-  - Access limited to specific university email domains (configurable via environment variables).
-  - Comprehensive Role-Based Access Control (RBAC) ensuring secure user and admin roles.
+**How it Works**
 
-- **📦 robust Item Management**
-  - Intuitive interface for creating, editing, and deleting rental listings.
-  - "Day-of-week" availability scheduling to manage when items are free.
-  - Detailed item descriptions and status tracking.
+CampusShare is built as a monolithic Full-Stack application using the **Next.js App Router**. It leverages a serverless-friendly architecture where:
+1.  **Frontend**: React components (Client & Server) render the UI using **Tailwind CSS** for styling and **shadcn/ui** for accessible primitives.
+2.  **Backend**: Next.js API Routes (`/api/*`) handle business logic, interfacing with the database via **Prisma ORM**.
+3.  **Authentication**: **NextAuth.js** manages secure sessions, utilizing Google OAuth and restricting access to specific university email domains.
+4.  **Database**: Data is persisted in **PostgreSQL** (production) or **SQLite** (development), managed through Prisma schema definitions.
 
-- **📅 Smart Booking Workflow**
-  - Full request lifecycle: **Pending → Accepted/Rejected**.
-  - Real-time conflict detection prevents double bookings.
-  - Automated status updates keep both owners and borrowers informed.
+---
 
-- **🔔 Integrated Notification System**
-  - In-app alerts for new booking requests and status changes.
-  - Centralized dashboard for managing incoming and outgoing requests.
+## 🛠️ Tech Stack
 
-- **📱 Modern & Responsive UI**
-  - Built with **Next.js 16 (App Router)** and **Tailwind CSS**.
-  - Mobile-first design featuring an app-like bottom navigation bar.
-  - Polished components using **shadcn/ui** for a premium look and feel.
+### Core
+-   **Language**: [TypeScript](https://www.typescriptlang.org/)
+-   **Framework**: [Next.js 16](https://nextjs.org/) (React 19)
+-   **Runtime**: [Node.js](https://nodejs.org/)
 
-## 🛠️ Technology Stack
+### Backend & Database
+-   **ORM**: [Prisma](https://www.prisma.io/)
+-   **Database**: PostgreSQL / SQLite
+-   **Authentication**: [NextAuth.js](https://next-auth.js.org/)
 
-| Layer | Technology |
-| :--- | :--- |
-| **Framework** | [Next.js 16](https://nextjs.org/) (React 19) |
-| **Language** | [TypeScript](https://www.typescriptlang.org/) |
-| **Database** | [PostgreSQL](https://www.postgresql.org/) / [SQLite](https://www.sqlite.org/) (via [Prisma ORM](https://www.prisma.io/)) |
-| **Authentication** | [NextAuth.js](https://next-auth.js.org/) (Google Provider) |
-| **Styling** | [Tailwind CSS](https://tailwindcss.com/) & [shadcn/ui](https://ui.shadcn.com/) |
-| **Validation** | [Zod](https://zod.dev/) & [React Hook Form](https://react-hook-form.com/) |
-| **Testing** | [Playwright](https://playwright.dev/) (End-to-End) |
+### Frontend & UI
+-   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+-   **Components**: [shadcn/ui](https://ui.shadcn.com/)
+-   **Icons**: [Lucide React](https://lucide.dev/)
 
-## 🚀 Getting Started
+### Utilities & Testing
+-   **Validation**: [Zod](https://zod.dev/)
+-   **Forms**: [React Hook Form](https://react-hook-form.com/)
+-   **Testing**: [Playwright](https://playwright.dev/)
 
-Follow these steps to set up the project locally.
+---
+
+## 🚀 Quick Start
+
+Follow these instructions to set up the project locally.
 
 ### Prerequisites
-
-- Node.js 18+ installed
-- A Google Cloud Console project (for OAuth credentials)
+-   Node.js 18.17 or later
+-   npm, yarn, or pnpm
+-   Git
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/campus-share-platform.git
-   cd campus-share-platform
-   ```
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/Start-Up-Glitch/campus-share-platform.git
+    cd campus-share-platform
+    ```
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+2.  **Install dependencies**
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
 
-3. **Configure Environment Variables**
-   Create a `.env` file in the root directory based on `.env.example`:
-   ```env
-   # Database (Default: SQLite for dev, PostgreSQL for prod)
-   DATABASE_URL="file:./dev.db"
+3.  **Environment Setup**
+    Create a `.env` file in the root directory:
+    ```env
+    DATABASE_URL="file:./dev.db"
+    NEXTAUTH_URL="http://localhost:3000"
+    NEXTAUTH_SECRET="super-secret-secret"
+    GOOGLE_CLIENT_ID="your-google-client-id"
+    GOOGLE_CLIENT_SECRET="your-google-client-secret"
+    ALLOWED_DOMAIN="university.edu"
+    ```
 
-   # Authentication (NextAuth.js)
-   NEXTAUTH_URL="http://localhost:3000"
-   NEXTAUTH_SECRET="your-super-secret-key"
+4.  **Initialize Database**
+    ```bash
+    npx prisma generate
+    npx prisma db push
+    ```
 
-   # Google OAuth
-   GOOGLE_CLIENT_ID="your-google-client-id"
-   GOOGLE_CLIENT_SECRET="your-google-client-secret"
+---
 
-   # Access Control
-   ALLOWED_DOMAIN="university.edu" # Restrict login to this domain
-   ```
+## 💡 Usage Examples
 
-4. **Initialize Database**
-   ```bash
-   npx prisma generate
-   npx prisma db push
-   ```
+### Running Development Server
+Start the local development server with hot-reloading:
+```bash
+npm run dev
+```
 
-5. **Start the Development Server**
-   ```bash
-   npm run dev
-   ```
-   Open [http://localhost:3000](http://localhost:3000) to view the app.
+### Building for Production
+Create an optimized production build:
+```bash
+npm run build
+npm start
+```
+
+### Database Management
+Open the Prisma Studio GUI to inspect and manage database records:
+```bash
+npx prisma studio
+```
+
+---
 
 ## 📂 Project Structure
 
 ```
 ├── src/
-│   ├── app/                 # Next.js App Router pages & layouts
-│   ├── components/          # Reusable UI components
-│   ├── lib/                 # Utility functions & configuration
-│   ├── types/               # TypeScript type definitions
-│   └── middleware.ts        # Auth & Route protection
+│   ├── app/                 # App Router pages & API routes
+│   │   ├── api/             # Backend API endpoints
+│   │   ├── (auth)/          # Authentication pages
+│   │   └── dashboard/       # Protected user dashboard
+│   ├── components/          # React components
+│   │   ├── ui/              # Reusable UI primitives
+│   │   └── layout/          # Layout components (Nav, Footer)
+│   ├── lib/                 # Utilities (DB connection, Auth config)
+│   └── types/               # TypeScript definitions
 ├── prisma/                  # Database schema & migrations
-├── public/                  # Static assets
-└── tests/                   # Playwright E2E tests
+├── public/                  # Static assets (images, fonts)
+└── tests/                   # E2E tests with Playwright
 ```
 
-## 🧪 Running Tests
+---
 
-This project uses **Playwright** for end-to-end testing to ensure platform stability.
+## 🔌 API Reference
 
-```bash
-# Run all tests headlessly
-npx playwright test
+Key endpoints available in the application:
 
-# Run tests in UI mode
-npx playwright test --ui
-```
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :---: |
+| `GET` | `/api/items` | List all available rental items | ❌ |
+| `POST` | `/api/items` | Create a new rental listing | ✅ |
+| `POST` | `/api/bookings` | Request to book an item | ✅ |
+| `GET` | `/api/bookings` | Fetch user's incoming/outgoing bookings | ✅ |
+| `GET` | `/api/notifications` | Retrieve user notifications | ✅ |
 
-## 🤝 Contributing
+---
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+## 📄 License
 
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
