@@ -40,7 +40,7 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { title, description, price, availability, image, images, category, condition, type, rentCoins, date, timeSlot } = body;
+        const { title, description, price, availability, image, images, category, condition, type, rentCoins, date, timeSlot, rentalDuration, availableFrom, availableUntil } = body;
 
         if (!title || !price || !availability || !Array.isArray(availability)) {
             return new NextResponse("Missing required fields", { status: 400 });
@@ -79,6 +79,9 @@ export async function POST(req: Request) {
             rentCoins: rentCoins ? parseFloat(rentCoins) : 0,
             date: date || null,
             timeSlot: timeSlot || null,
+            rentalDuration: rentalDuration || null,
+            availableFrom: availableFrom || null,
+            availableUntil: availableUntil || null,
 
             images: imageList,
             image: mainImage, // Keep backward compatibility for thumbnail
@@ -226,7 +229,7 @@ export async function PUT(req: Request) {
         }
 
         const body = await req.json();
-        const { id, title, description, price, image, images, category, condition, type, availability, status } = body;
+        const { id, title, description, price, image, images, category, condition, type, availability, status, rentalDuration, availableFrom, availableUntil } = body;
 
         if (!id) {
             return new NextResponse("Missing Item ID", { status: 400 });
@@ -268,6 +271,9 @@ export async function PUT(req: Request) {
             category,
             condition,
             type,
+            rentalDuration,
+            availableFrom,
+            availableUntil,
             images: imageList,
             image: mainImage
         };

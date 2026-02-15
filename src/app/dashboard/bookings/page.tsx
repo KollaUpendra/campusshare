@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 
 type Booking = {
     id: string;
-    status: "pending" | "accepted" | "rejected";
+    status: "pending" | "accepted" | "rejected" | "PENDING" | "ACCEPTED" | "REJECTED" | "COMPLETED";
     date: string;
     item: {
         id: string;
@@ -181,6 +181,29 @@ export default function BookingsPage() {
                                             <X className="h-4 w-4 mr-1" /> Reject
                                         </Button>
                                     </div>
+                                )}
+
+                                {activeTab === "outgoing" && (booking.status === "accepted" || booking.status === "ACCEPTED") && (
+                                     <div className="mt-4">
+                                         <Button 
+                                            className="w-full bg-green-600 hover:bg-green-700" 
+                                            size="sm"
+                                            onClick={async () => {
+                                                if(!confirm(`Pay ${booking.item.price} coins now?`)) return;
+                                                try {
+                                                    const res = await fetch(`/api/bookings/${booking.id}/pay`, { method: "POST" });
+                                                    if(!res.ok) throw new Error(await res.text());
+                                                    alert("Payment Successful!");
+                                                    fetchBookings(); // Refresh list
+                                                    router.refresh(); 
+                                                } catch(e) {
+                                                    alert(e instanceof Error ? e.message : "Payment failed");
+                                                }
+                                            }}
+                                         >
+                                            Pay Now ({booking.item.price} Coins)
+                                         </Button>
+                                     </div>
                                 )}
                             </CardContent>
                         </Card>

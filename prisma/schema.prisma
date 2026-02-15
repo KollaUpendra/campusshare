@@ -109,6 +109,11 @@ model Item {
   date         String?        // YYYY-MM-DD (for specific date availability)
   timeSlot     String?        // 'Morning' | 'Evening' (ENUM simulation)
   
+  // New Rental Specific Fields
+  rentalDuration String?      // e.g. "1 Month", "2 Weeks"
+  availableFrom  String?      // YYYY-MM-DD
+  availableUntil String?      // YYYY-MM-DD
+  
   status       String         @default("active") // 'active' | 'inactive' | 'sold' | 'AVAILABLE' | 'PENDING' | 'BOOKED' | 'COMPLETED' | 'EXPIRED'
   
   ownerId      String

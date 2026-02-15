@@ -24,34 +24,31 @@ interface BookingRequestButtonProps {
     itemId: string;
     price: number;
     availableDays: string[];
-    type?: string; // 'Rent' | 'Sell'
+    type?: string;
+    currentRequest?: any; // Booking object
 }
 
-export default function BookingRequestButton({ itemId, price, availableDays, type = "Rent" }: BookingRequestButtonProps) {
+export default function BookingRequestButton({ itemId, price, availableDays, type = "Rent", currentRequest }: BookingRequestButtonProps) {
     const [date, setDate] = useState<Date | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const router = useRouter();
     const { data: session } = useSession();
 
-    // Helper to check if a date is valid based on availableDays
     const isDateDisabled = (d: Date) => {
-        const dayName = format(d, "EEEE"); // "Monday", "Tuesday"...
-        // Disable pure past dates
+        const dayName = format(d, "EEEE");
         if (d < new Date(new Date().setHours(0, 0, 0, 0))) return true;
-        // Disable if day of week not in availability
         return !availableDays.includes(dayName);
     };
 
-    const handleBuy = async () => {
-        if (!confirm(`Are you sure you want to buy this item for ${price} coins?`)) return;
-        
+    const handlePay = async () => {
+        if (!currentRequest) return;
+        if (!confirm(`Confirm payment of ${price} coins?`)) return;
+
         setIsLoading(true);
         try {
-            const res = await fetch("/api/transactions/buy", {
+            const res = await fetch(`/api/bookings/${currentRequest.id}/pay`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ itemId }),
             });
 
             if (!res.ok) {
@@ -59,19 +56,17 @@ export default function BookingRequestButton({ itemId, price, availableDays, typ
                 throw new Error(msg);
             }
 
-            alert("Purchase successful!");
-            router.push("/profile"); // Redirect to profile or orders page
+            alert("Payment successful!");
+            router.push("/transactions");
             router.refresh();
         } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : "Purchase failed";
-            alert(message);
+            alert(error instanceof Error ? error.message : "Payment failed");
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleRentRequest = async () => {
-        if (!date) return;
+    const handleRequest = async (requestDate?: string) => {
         if (!session) {
             alert("Please sign in to book items");
             return;
@@ -79,13 +74,19 @@ export default function BookingRequestButton({ itemId, price, availableDays, typ
 
         setIsLoading(true);
         try {
+            const body: any = { itemId };
+            if (requestDate) {
+                body.date = requestDate;
+            } else if (type === "Sell") {
+                // For sell, just send today's date or let backend handle
+                // Backend expects date for Rent, optional/handled for Sell
+                 body.date = new Date().toISOString().split("T")[0];
+            }
+
             const res = await fetch("/api/bookings", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    itemId,
-                    date: format(date, "yyyy-MM-dd"),
-                }),
+                body: JSON.stringify(body),
             });
 
             if (!res.ok) {
@@ -93,27 +94,56 @@ export default function BookingRequestButton({ itemId, price, availableDays, typ
                 throw new Error(msg);
             }
 
-            alert("Request sent successfully!");
+            alert("Request sent successfully! Wait for owner approval.");
             setIsOpen(false);
             router.refresh();
         } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : "Failed to send request";
-            alert(message);
+            alert(error instanceof Error ? error.message : "Failed to send request");
         } finally {
             setIsLoading(false);
         }
     };
 
+    // --- RENDER STATES ---
+
+    if (currentRequest) {
+        if (currentRequest.status === "PENDING" || currentRequest.status === "pending") {
+             return (
+                <Button className="w-full" size="lg" disabled>
+                    <Loader2 className="mr-2 h-4 w-4" />
+                    Request Pending
+                </Button>
+            );
+        }
+        if (currentRequest.status === "ACCEPTED" || currentRequest.status === "accepted") {
+             return (
+                <Button className="w-full bg-green-600 hover:bg-green-700 text-white" size="lg" onClick={handlePay} disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Pay Now ({price} Coins)
+                </Button>
+            );
+        }
+        if (currentRequest.status === "COMPLETED" || currentRequest.status === "completed") {
+            return (
+                <Button className="w-full" variant="secondary" size="lg" disabled>
+                    {type === "Sell" ? "Purchased" : "Rented"}
+                </Button>
+            );
+        }
+    }
+
+    // --- INITIAL REQUEST STATE ---
+
     if (type === "Sell") {
         return (
-            <Button className="w-full bg-green-600 hover:bg-green-700 text-white" size="lg" onClick={handleBuy} disabled={isLoading}>
+            <Button className="w-full" size="lg" onClick={() => handleRequest()} disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Buy Now for {price} Coins
+                Request to Buy
             </Button>
         );
     }
 
-    // Rent Logic
+    // Rent Request
     return (
         <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
@@ -126,7 +156,7 @@ export default function BookingRequestButton({ itemId, price, availableDays, typ
                     <div className="space-y-2">
                         <h4 className="font-medium leading-none">Select Date</h4>
                         <p className="text-sm text-muted-foreground">
-                            Pick an available day to borrow this item.
+                            Pick an available day.
                         </p>
                     </div>
                     <div className="flex flex-col gap-2">
@@ -140,20 +170,12 @@ export default function BookingRequestButton({ itemId, price, availableDays, typ
                                     setDate(undefined);
                                     return;
                                 }
-                                const dateObj = new Date(val);
-                                // Adjust specifically for input date string returning UTC midnight usually?
-                                // Actually input type="date" value is YYYY-MM-DD.
-                                // New Date("YYYY-MM-DD") is usually UTC. 
-                                // We want local day comparison.
-                                // A simple way is to just keep the string or parse carefully.
-                                // But my isDateDisabled uses Date object.
-                                // Let's ensure we work with the day selected.
-                                setDate(dateObj); 
+                                setDate(new Date(val));
                             }}
                         />
                          {date && isDateDisabled(date) && (
                             <p className="text-xs text-red-500">
-                                Item not available on {format(date, "EEEE")}
+                                Not available on {format(date, "EEEE")}
                             </p>
                         )}
                         {date && !isDateDisabled(date) && (
@@ -164,7 +186,7 @@ export default function BookingRequestButton({ itemId, price, availableDays, typ
                     </div>
 
                     <Button
-                        onClick={handleRentRequest}
+                        onClick={() => handleRequest(date ? format(date, "yyyy-MM-dd") : undefined)}
                         disabled={!date || isDateDisabled(date) || isLoading}
                         className="w-full"
                     >

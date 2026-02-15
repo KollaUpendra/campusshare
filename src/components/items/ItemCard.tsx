@@ -25,9 +25,10 @@ interface ItemCardProps {
         }[];
     };
     isWishlisted?: boolean;
+    showEditButton?: boolean;
 }
 
-export default function ItemCard({ item, isWishlisted = false }: ItemCardProps) {
+export default function ItemCard({ item, isWishlisted = false, showEditButton = false }: ItemCardProps) {
     const [wishlisted, setWishlisted] = useState(isWishlisted);
     const { data: session } = useSession();
 
@@ -71,12 +72,14 @@ export default function ItemCard({ item, isWishlisted = false }: ItemCardProps) 
                     </div>
                 )}
 
-                <button
-                    onClick={toggleWishlist}
-                    className="absolute top-2 right-2 p-2 rounded-full bg-background/80 hover:bg-background text-red-500 shadow-sm transition-colors"
-                >
-                    <Heart className="h-4 w-4" fill={wishlisted ? "currentColor" : "none"} />
-                </button>
+                {!showEditButton && (
+                    <button
+                        onClick={toggleWishlist}
+                        className="absolute top-2 right-2 p-2 rounded-full bg-background/80 hover:bg-background text-red-500 shadow-sm transition-colors"
+                    >
+                        <Heart className="h-4 w-4" fill={wishlisted ? "currentColor" : "none"} />
+                    </button>
+                )}
             </div>
             <CardHeader className="p-4 pb-2">
                 <div className="flex justify-between items-start">
@@ -100,10 +103,21 @@ export default function ItemCard({ item, isWishlisted = false }: ItemCardProps) 
                     ))}
                 </div>
             </CardContent>
-            <CardFooter className="p-4 pt-0">
-                <Button asChild className="w-full" size="sm">
-                    <Link href={`/items/${item.id}`}>View Details</Link>
-                </Button>
+            <CardFooter className="p-4 pt-0 gap-2">
+                {showEditButton ? (
+                    <>
+                        <Button asChild className="flex-1" variant="outline" size="sm">
+                            <Link href={`/items/${item.id}/edit`}>Edit</Link>
+                        </Button>
+                        <Button asChild className="flex-1" size="sm">
+                            <Link href={`/items/${item.id}`}>View</Link>
+                        </Button>
+                    </>
+                ) : (
+                    <Button asChild className="w-full" size="sm">
+                        <Link href={`/items/${item.id}`}>View Details</Link>
+                    </Button>
+                )}
             </CardFooter>
         </Card>
     );

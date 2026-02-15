@@ -119,13 +119,21 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
       </section>
 
       {/* Items Grid */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <section className="flex flex-wrap gap-4 justify-start">
         {items.length > 0 ? (
           items.map((item) => (
-            <ItemCard key={item.id} item={item} isWishlisted={wishlistSet.has(item.id)} />
+            // Flex widths:
+            // sm (2 cols): w-[calc(50%-0.5rem)] -> 100% - 1 gap (1*1rem) / 2
+            // lg (3 cols): w-[calc(33.333%-0.67rem)] -> 100% - 2 gaps (2*1rem) / 3
+            // Default (mobile): w-full, but user wants "side by side", so let's try to keep it responsive. 
+            // If the user wants side-by-side on mobile too, we could use w-[calc(50%-0.5rem)].
+            // Sticking to standard responsive behavior for now but using Flex as requested.
+            <div key={item.id} className="w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.67rem)]">
+              <ItemCard item={item} isWishlisted={wishlistSet.has(item.id)} />
+            </div>
           ))
         ) : (
-          <div className="col-span-full text-center py-10 text-muted-foreground">
+          <div className="w-full text-center py-10 text-muted-foreground">
             <p>No items found.</p>
             {(query || category || type) && <p className="text-sm">Try broader search criteria.</p>}
           </div>

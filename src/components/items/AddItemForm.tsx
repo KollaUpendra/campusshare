@@ -12,7 +12,6 @@ import Image from 'next/image';
 const CATEGORIES = ["Electronics", "Books", "Stationery", "Clothing", "Sports", "Other"];
 const CONDITIONS = ["New", "Like New", "Good", "Fair", "Poor"];
 const TYPES = ["Rent", "Sell"];
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const formSchema = z.object({
     title: z.string().min(3, "Title must be at least 3 characters"),
@@ -24,6 +23,8 @@ const formSchema = z.object({
     condition: z.string(),
     type: z.string(),
     images: z.array(z.string()).optional(),
+    availableFrom: z.string().optional(),
+    availableUntil: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -40,6 +41,8 @@ interface AddItemFormProps {
         condition?: string;
         type?: string;
         availability: { dayOfWeek: string }[];
+        availableFrom?: string | null;
+        availableUntil?: string | null;
     };
     cloudinaryConfig: {
         cloudName: string;
@@ -48,7 +51,6 @@ interface AddItemFormProps {
 }
 
 export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFormProps) {
-    const [selectedDays, setSelectedDays] = useState<string[]>(initialData?.availability.map(a => a.dayOfWeek) || []);
     // Initialize images from legacy 'image' or new 'images' array
     const [imageUrls, setImageUrls] = useState<string[]>(
         initialData?.images && initialData.images.length > 0 
@@ -74,22 +76,21 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
             condition: initialData.condition || "Good",
             type: initialData.type || "Rent",
             images: initialData.images || (initialData.image ? [initialData.image] : []),
+            availableFrom: initialData.availableFrom || "",
+            availableUntil: initialData.availableUntil || "",
         } : {
             category: "Other",
             condition: "Good",
-            type: "Rent",
+            type: "Rent", // Default to Rent as per user preference likely
             images: [],
+            availableFrom: "",
+            availableUntil: "",
         },
     });
 
     const listingType = watch("type");
 
     const onSubmit = async (data: FormData) => {
-        if (selectedDays.length === 0 && listingType === "Rent") {
-            alert("Please select at least one available day for rentals");
-            return;
-        }
-
         setIsSubmitting(true);
         try {
             const url = "/api/items";
@@ -105,7 +106,9 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
                 category: data.category,
                 condition: data.condition,
                 type: data.type,
-                availability: listingType === "Rent" ? selectedDays : [], // Availability only for rentals
+                availability: [], // Deprecated availability days
+                availableFrom: listingType === "Rent" ? data.availableFrom : null,
+                availableUntil: listingType === "Rent" ? data.availableUntil : null,
             };
 
             const res = await fetch(url, {
@@ -134,8 +137,8 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
         const files = e.target.files;
         if (!files || files.length === 0) return;
 
-        if (imageUrls.length + files.length > 5) {
-            alert("You can upload a maximum of 5 images.");
+        if (imageUrls.length + files.length > 1) {
+            alert("You can only upload 1 image.");
             return;
         }
 
@@ -179,6 +182,9 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
 
                 if (data.secure_url) {
                     newUrls.push(data.secure_url);
+                } else {
+                    console.error("Cloudinary upload failed", data);
+                    alert("Upload failed. Please try again. " + (data.error?.message || ""));
                 }
             }
 
@@ -188,7 +194,7 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
 
         } catch (error) {
             console.error("Upload failed:", error);
-            alert("Image upload failed");
+            alert("Image upload failed: " + (error instanceof Error ? error.message : "Unknown error"));
         } finally {
             setIsSubmitting(false);
         }
@@ -200,57 +206,39 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
         setValue("images", updatedUrls);
     };
 
-    const toggleDay = (day: string) => {
-        setSelectedDays((prev) =>
-            prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-        );
-    };
+
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <h1 className="text-2xl font-bold text-center">{initialData ? "Edit Item" : "List New Item"}</h1>
 
-            {/* Image Upload Section */}
-            <div className="space-y-2">
-                <label className="text-sm font-medium">Product Images (Max 5)</label>
-                <div className="border border-dashed rounded-lg p-4">
-                    <div className="flex flex-wrap gap-4 mb-4">
-                        {imageUrls.map((url, index) => (
-                            <div key={index} className="relative w-24 h-24 rounded-lg overflow-hidden border">
-                                <Image
-                                    src={url}
-                                    alt={`Product ${index + 1}`}
-                                    fill
-                                    className="object-cover"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => removeImage(index)}
-                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 h-5 w-5 flex items-center justify-center text-xs"
-                                >
-                                    ×
-                                </button>
-                            </div>
-                        ))}
-                        {imageUrls.length < 5 && (
-                            <div className="w-24 h-24 flex items-center justify-center bg-muted rounded-lg border cursor-pointer hover:bg-muted/80 relative">
-                                <span className="text-2xl text-muted-foreground">+</span>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    multiple
-                                    onChange={handleImageUpload}
-                                    className="absolute inset-0 opacity-0 cursor-pointer"
-                                    title="Upload images"
-                                />
-                            </div>
-                        )}
-                    </div>
-                    <p className="text-xs text-muted-foreground text-center">
-                        Upload up to 5 images. First image will be the main thumbnail.
-                    </p>
+
+            {/* Rent/Sell Toggle */}
+            <div className="flex justify-center mb-6">
+                <div className="bg-muted p-1 rounded-lg inline-flex">
+                    <button
+                        type="button"
+                        onClick={() => setValue("type", "Sell")}
+                        className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${listingType === "Sell"
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                    >
+                        Sell
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setValue("type", "Rent")}
+                        className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${listingType === "Rent"
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                    >
+                        Rent
+                    </button>
                 </div>
             </div>
+
+
 
             {/* Basic Info */}
             <div className="space-y-2">
@@ -273,8 +261,10 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
                 {errors.description && <p className="text-red-500 text-xs">{errors.description.message}</p>}
             </div>
 
-            {/* Category & Condition & Type */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+
+            {/* Category & Condition */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <label className="text-sm font-medium">Category</label>
                     <select {...register("category")} className="w-full p-3 border rounded-lg bg-background">
@@ -287,50 +277,88 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
                         {CONDITIONS.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                 </div>
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">Listing Type</label>
-                    <select {...register("type")} className="w-full p-3 border rounded-lg bg-background">
-                        {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                </div>
             </div>
 
             {/* Price */}
+            {/* Price & Rental Specifics */}
             <div className="space-y-2">
                 <label htmlFor="price" className="text-sm font-medium">
-                    {listingType === "Rent" ? "Price per Day (Coins)" : "Selling Price (Coins)"}
+                    {listingType === "Rent" ? "Rental Price per Day (₹)" : "Price (₹)"}
                 </label>
                 <input
                     {...register("price")}
                     type="number"
                     step="0.01"
-                    placeholder="50"
+                    placeholder={listingType === "Rent" ? "e.g. 500" : "e.g. 1500"}
                     className="w-full p-3 border rounded-lg bg-background"
                 />
                 {errors.price && <p className="text-red-500 text-xs">{errors.price.message}</p>}
             </div>
 
-            {/* Availability (Only if Rent) */}
             {listingType === "Rent" && (
-                <div className="space-y-2">
-                    <p className="text-sm font-medium">Available Days:</p>
-                    <div className="flex flex-wrap gap-2">
-                        {DAYS.map((day) => (
-                            <button
-                                key={day}
-                                type="button"
-                                onClick={() => toggleDay(day)}
-                                className={`px-3 py-2 rounded-full text-sm border transition-colors ${selectedDays.includes(day)
-                                    ? "bg-primary text-primary-foreground border-primary"
-                                    : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
-                                    }`}
-                            >
-                                {day.slice(0, 3)}
-                            </button>
-                        ))}
+                <>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Available From</label>
+                        <input
+                            {...register("availableFrom")}
+                            type="date"
+                            className="w-full p-3 border rounded-lg bg-background"
+                        />
                     </div>
-                </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Available Until</label>
+                        <input
+                            {...register("availableUntil")}
+                            type="date"
+                            className="w-full p-3 border rounded-lg bg-background"
+                        />
+                    </div>
+                </>
             )}
+
+
+
+            {/* Image Upload Section */}
+            <div className="space-y-2">
+                <label className="text-sm font-medium">Product Image</label>
+                <div className="border border-dashed rounded-lg p-4">
+                    <div className="flex flex-wrap justify-center gap-4 mb-4">
+                        {imageUrls.map((url, index) => (
+                            <div key={index} className="relative w-24 h-24 rounded-lg overflow-hidden border">
+                                <Image
+                                    src={url}
+                                    alt={`Product ${index + 1}`}
+                                    fill
+                                    className="object-cover"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => removeImage(index)}
+                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 h-5 w-5 flex items-center justify-center text-xs"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        ))}
+                        {imageUrls.length < 1 && (
+                            <div className="w-24 h-24 flex items-center justify-center bg-muted rounded-lg border cursor-pointer hover:bg-muted/80 relative">
+                                <span className="text-2xl text-muted-foreground">+</span>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
+                                    title="Upload images"
+                                />
+                            </div>
+                        )}
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center">
+                        Upload an image of your product.
+                    </p>
+                </div>
+            </div>
 
             <Button type="submit" size="lg" className="w-full font-bold mt-4" disabled={isSubmitting}>
                 {isSubmitting ? (
