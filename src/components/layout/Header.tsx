@@ -40,18 +40,26 @@ export default function Header() {
                 <div className="flex items-center gap-2">
                     {session ? (
                         <>
+                            <div className="hidden md:flex items-center gap-1 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium border border-yellow-200">
+                                <span>🪙</span>
+                                <span>{(session.user as any).coins?.toFixed(0) || 0}</span>
+                            </div>
+
                             <Button variant="ghost" size="icon" className="relative">
                                 <Bell className="h-5 w-5" />
                                 <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-600 border border-background"></span>
                                 <span className="sr-only">Notifications</span>
                             </Button>
-                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border">
-                                {session.user?.image ? (
-                                    <Image src={session.user.image} alt={session.user.name || "User"} width={32} height={32} className="h-full w-full object-cover" />
-                                ) : (
-                                    <UserIcon className="h-5 w-5 text-primary" />
-                                )}
-                            </div>
+                            
+                            <Link href="/profile">
+                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border">
+                                    {session.user?.image ? (
+                                        <Image src={session.user.image} alt={session.user.name || "User"} width={32} height={32} className="h-full w-full object-cover" />
+                                    ) : (
+                                        <UserIcon className="h-5 w-5 text-primary" />
+                                    )}
+                                </div>
+                            </Link>
                         </>
                     ) : (
                         <LoginButton />

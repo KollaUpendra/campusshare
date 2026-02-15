@@ -34,7 +34,7 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { title, description, price, availability } = body;
+        const { title, description, price, availability, image, images, category, condition, type } = body;
 
         if (!title || !price || !availability || !Array.isArray(availability)) {
             return new NextResponse("Missing required fields", { status: 400 });
@@ -55,16 +55,28 @@ export async function POST(req: Request) {
             return new NextResponse(`Invalid days: ${invalidDays.join(", ")}`, { status: 400 });
         }
 
-        const newItem = await db.item.create({
-            data: {
-                title: title.trim(),
-                description: description?.trim() || "",
-                price,
-                ownerId: session.user.id,
-                availability: {
-                    create: availability.map((day: string) => ({ dayOfWeek: day }))
-                }
+        // Use specific images array if provided, otherwise fallback to legacy image field if present
+        const imageList = images && images.length > 0 ? images : (body.image ? [body.image] : []);
+        const mainImage = imageList[0] || null;
+
+        const itemData: any = {
+            title: title.trim(),
+            description: description?.trim() || "",
+            price: parseFloat(price),
+            ownerId: session.user.id,
+            category: category || "Other",
+            condition: condition || "Used",
+            type: type || "Rent",
+            status: "active",
+            images: imageList,
+            image: mainImage, // Keep backward compatibility for thumbnail
+            availability: {
+                create: availability.map((day: string) => ({ dayOfWeek: day }))
             }
+        };
+
+        const newItem = await db.item.create({
+            data: itemData,
         });
 
         return NextResponse.json(newItem);
@@ -177,14 +189,16 @@ export async function PUT(req: Request) {
         }
 
         const body = await req.json();
-        const { id, title, description, price, availability } = body;
+        const { id, title, description, price, image, images, category, condition, type, availability, status } = body;
 
-        if (!id || !title || !price || !availability || !Array.isArray(availability)) {
-            return new NextResponse("Missing required fields", { status: 400 });
+        if (!id) {
+            return new NextResponse("Missing Item ID", { status: 400 });
         }
 
+        // Check ownership
         const existingItem = await db.item.findUnique({
-            where: { id }
+            where: { id },
+            select: { ownerId: true }
         });
 
         if (!existingItem) {
@@ -195,40 +209,62 @@ export async function PUT(req: Request) {
             return new NextResponse("Unauthorized", { status: 403 });
         }
 
-        const validDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-        const invalidDays = availability.filter((day: string) => !validDays.includes(day));
+        // Validate day names if availability is provided
+        if (availability && Array.isArray(availability)) {
+            const validDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+            const invalidDays = availability.filter((day: string) => !validDays.includes(day));
 
-        if (invalidDays.length > 0) {
-            return new NextResponse(`Invalid days: ${invalidDays.join(", ")}`, { status: 400 });
+            if (invalidDays.length > 0) {
+                return new NextResponse(`Invalid days: ${invalidDays.join(", ")}`, { status: 400 });
+            }
         }
+
+        // Prepare update data
+        const imageList = images && images.length > 0 ? images : (image ? [image] : []);
+        const mainImage = imageList[0] || null;
+
+        const updateData: any = {
+            title,
+            description,
+            price: price ? parseFloat(price) : undefined,
+            status,
+            category,
+            condition,
+            type,
+            images: imageList,
+            image: mainImage
+        };
+
+        // Remove undefined keys
+        Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+
 
         // Transaction to update item and replace availability
         const updatedItem = await db.$transaction(async (tx) => {
             // Update basic fields
             const item = await tx.item.update({
                 where: { id },
-                data: {
-                    title,
-                    description,
-                    price,
+                data: updateData
+            });
+
+            // Update availability only if provided
+            if (availability && Array.isArray(availability)) {
+                 // Delete existing availability
+                await tx.availability.deleteMany({
+                    where: { itemId: id }
+                });
+                
+                // Create new availability
+                if (availability.length > 0) {
+                    await Promise.all(availability.map((day: string) =>
+                        tx.availability.create({
+                            data: {
+                                itemId: id,
+                                dayOfWeek: day
+                            }
+                        })
+                    ));
                 }
-            });
-
-            // Delete existing availability
-            await tx.availability.deleteMany({
-                where: { itemId: id }
-            });
-
-            // Create new availability
-            if (availability.length > 0) {
-                await Promise.all(availability.map((day: string) =>
-                    tx.availability.create({
-                        data: {
-                            itemId: id,
-                            dayOfWeek: day
-                        }
-                    })
-                ));
             }
 
             return item;
