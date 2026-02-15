@@ -73,21 +73,26 @@ export default function BookingsPage() {
     };
 
     const handleAction = async (bookingId: string, action: "accepted" | "rejected") => {
-        if (!confirm(`Are you sure you want to ${action} this request?`)) return;
+        if (!confirm(`Are you sure you want to ${action === "accepted" ? "accept" : "reject"} this request?`)) return;
 
         try {
-            const res = await fetch(`/api/bookings/${bookingId}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status: action }),
+            // Fix: Use dedicated accept/reject endpoints that handle coin transfer,
+            // item status updates, transaction records, and notifications atomically
+            const endpoint = action === "accepted" ? "accept" : "reject";
+            const res = await fetch(`/api/bookings/${bookingId}/${endpoint}`, {
+                method: "POST",
             });
 
-            if (!res.ok) throw new Error("Failed to update");
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(errorText || "Failed to update");
+            }
 
-            // Optimistic update
-            setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: action } : b));
+            // Optimistic update — status from accept/reject endpoints is uppercase
+            const newStatus = action === "accepted" ? "ACCEPTED" : "REJECTED";
+            setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus as any } : b));
         } catch (error) {
-            alert("Failed to update status");
+            alert(`Failed to ${action === "accepted" ? "accept" : "reject"}: ${error instanceof Error ? error.message : "Unknown error"}`);
         }
     };
 

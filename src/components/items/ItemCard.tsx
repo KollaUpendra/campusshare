@@ -15,7 +15,7 @@ interface ItemCardProps {
         title: string;
         description: string;
         price: number;
-        image: string | null;
+        images: string[];
         owner: {
             name: string | null;
             image: string | null;
@@ -58,9 +58,9 @@ export default function ItemCard({ item, isWishlisted = false }: ItemCardProps) 
     return (
         <Card className="overflow-hidden flex flex-col h-full group">
             <div className="relative w-full aspect-video bg-muted">
-                {item.image ? (
+                {item.images && item.images.length > 0 ? (
                     <Image
-                        src={item.image}
+                        src={item.images[0]}
                         alt={item.title}
                         fill
                         className="object-cover transition-transform group-hover:scale-105"
@@ -70,8 +70,8 @@ export default function ItemCard({ item, isWishlisted = false }: ItemCardProps) 
                         <span className="text-xs">No Image</span>
                     </div>
                 )}
-                
-                <button 
+
+                <button
                     onClick={toggleWishlist}
                     className="absolute top-2 right-2 p-2 rounded-full bg-background/80 hover:bg-background text-red-500 shadow-sm transition-colors"
                 >

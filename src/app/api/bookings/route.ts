@@ -40,7 +40,7 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { itemId, date } = body;
+        const { itemId, date, timeSlot } = body;
 
         if (!itemId || !date) {
             return new NextResponse("Missing required fields", { status: 400 });
@@ -56,16 +56,32 @@ export async function POST(req: Request) {
         const dateObj = new Date(date);
         const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
 
+        // Fetch User with Coins
+        const renter = await db.user.findUnique({
+            where: { id: session.user.id },
+            select: { id: true, coins: true, name: true, isBlocked: true }
+        });
+
+        if (!renter) {
+            return new NextResponse("User not found", { status: 404 });
+        }
+
+        // Blocked-user guard
+        if (renter.isBlocked) {
+            return new NextResponse("Your account has been blocked by admin", { status: 403 });
+        }
+
+        // Fetch Item
         const item = await db.item.findUnique({
             where: { id: itemId },
-            include: { availability: true } // Include availability to check
+            include: { availability: true }
         });
 
         if (!item) {
             return new NextResponse("Item not found", { status: 404 });
         }
 
-        if (item.ownerId === session.user.id) {
+        if (item.ownerId === renter.id) {
             return new NextResponse("Cannot book your own item", { status: 400 });
         }
 
@@ -75,12 +91,30 @@ export async function POST(req: Request) {
             return new NextResponse(`Item is not available on ${dayOfWeek}s`, { status: 400 });
         }
 
+        // Status Check
+        if (item.status !== 'active' && item.status !== 'AVAILABLE') {
+            return new NextResponse("Item is not available for booking", { status: 400 });
+        }
+
+        // Expiry Check
+        if (item.date && item.date < new Date().toISOString().split('T')[0]) {
+            return new NextResponse("This item's rental period has expired", { status: 400 });
+        }
+
+        // --- COIN & WALLET CHECK ---
+        const rentCost = (item as any).rentCoins || 0;
+        const requiredBalance = rentCost + 500;
+
+        if ((renter.coins || 0) < requiredBalance) {
+            return new NextResponse("Minimum balance of 500 coins must remain after booking", { status: 402 });
+        }
+
         // Check if already booked for that date
         const existingBooking = await db.booking.findFirst({
             where: {
                 itemId,
                 date,
-                status: { not: "rejected" } // Only prevent if accepted or pending
+                status: { notIn: ["rejected", "REJECTED", "CANCELLED"] }
             }
         });
 
@@ -88,24 +122,37 @@ export async function POST(req: Request) {
             return new NextResponse("Item already booked for this date", { status: 409 });
         }
 
-        const newBooking = await db.booking.create({
-            data: {
-                itemId,
-                borrowerId: session.user.id,
-                date,
-                status: "pending"
-            }
+        // --- ATOMIC CREATION & STATUS UPDATE ---
+        const result = await db.$transaction(async (tx) => {
+            // 1. Create Booking
+            const booking = await tx.booking.create({
+                data: {
+                    itemId,
+                    borrowerId: renter.id,
+                    date,
+                    timeSlot: timeSlot || null,
+                    status: "PENDING"
+                }
+            });
+
+            // 2. Update Item Status -> PENDING (hides from marketplace)
+            await tx.item.update({
+                where: { id: itemId },
+                data: { status: "PENDING" }
+            });
+
+            // 3. Create Notification for Owner
+            await tx.notification.create({
+                data: {
+                    userId: item.ownerId,
+                    message: `New booking request for ${item.title} on ${date} (${dayOfWeek}) by ${renter.name || "a user"}`
+                }
+            });
+
+            return booking;
         });
 
-        // Create Notification for Owner
-        await db.notification.create({
-            data: {
-                userId: item.ownerId,
-                message: `New booking request for ${item.title} on ${date} (${dayOfWeek}) by ${session.user.name || "a user"}`
-            }
-        });
-
-        return NextResponse.json(newBooking);
+        return NextResponse.json(result);
     } catch (error) {
         console.error("[BOOKING_POST]", error);
         return new NextResponse("Internal Server Error", { status: 500 });

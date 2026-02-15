@@ -33,8 +33,14 @@ export async function POST(req: Request) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
+        // Blocked-user guard
+        const poster = await db.user.findUnique({ where: { id: session.user.id }, select: { isBlocked: true } });
+        if (poster?.isBlocked) {
+            return new NextResponse("Your account has been blocked by admin", { status: 403 });
+        }
+
         const body = await req.json();
-        const { title, description, price, availability, image, images, category, condition, type } = body;
+        const { title, description, price, availability, image, images, category, condition, type, rentCoins, date, timeSlot } = body;
 
         if (!title || !price || !availability || !Array.isArray(availability)) {
             return new NextResponse("Missing required fields", { status: 400 });
@@ -68,6 +74,12 @@ export async function POST(req: Request) {
             condition: condition || "Used",
             type: type || "Rent",
             status: "active",
+
+            // New Fields for Time-Slot Renting
+            rentCoins: rentCoins ? parseFloat(rentCoins) : 0,
+            date: date || null,
+            timeSlot: timeSlot || null,
+
             images: imageList,
             image: mainImage, // Keep backward compatibility for thumbnail
             availability: {
@@ -100,14 +112,26 @@ export async function POST(req: Request) {
  * @param {Request} req - The HTTP request object.
  * @returns {NextResponse} JSON list of items.
  */
+import { processExpirations } from "@/lib/scheduler";
+
 export async function GET(req: Request) {
     try {
+        // Lazy cleanup check
+        await processExpirations();
+
         const { searchParams } = new URL(req.url);
         const query = searchParams.get("query");
 
+        // Marketplace Filter:
+        // Return items ONLY IF:
+        // item.status = AVAILABLE (or 'active' for legacy compatibility)
+        // AND no PENDING booking exists (handled by checking item status if we update it on booking)
+        // AND currentDateTime < rentalDateTime (if date is present)
+
         const items = await db.item.findMany({
             where: {
-                status: "active",
+                // Support both legacy 'active' and new 'AVAILABLE' status
+                status: { in: ["active", "AVAILABLE"] },
                 ...(query ? {
                     OR: [
                         { title: { contains: query, mode: 'insensitive' } },
@@ -129,7 +153,20 @@ export async function GET(req: Request) {
             }
         });
 
-        return NextResponse.json(items);
+        // Filter out expired items (if date is present and passed)
+        const now = new Date();
+        const validItems = items.filter(item => {
+            if (item.date) {
+                const itemDate = new Date(item.date);
+                // Check if date has passed (simple check, creating a date object at 00:00)
+                // If itemDate < today (ignoring time), it's expired.
+                // For simplicity, we compare ISO strings
+                return (item as any).date >= now.toISOString().split('T')[0];
+            }
+            return true;
+        });
+
+        return NextResponse.json(validItems);
     } catch (error) {
         console.error("[ITEMS_GET]", error);
         return new NextResponse("Internal Server Error", { status: 500 });
@@ -249,11 +286,11 @@ export async function PUT(req: Request) {
 
             // Update availability only if provided
             if (availability && Array.isArray(availability)) {
-                 // Delete existing availability
+                // Delete existing availability
                 await tx.availability.deleteMany({
                     where: { itemId: id }
                 });
-                
+
                 // Create new availability
                 if (availability.length > 0) {
                     await Promise.all(availability.map((day: string) =>

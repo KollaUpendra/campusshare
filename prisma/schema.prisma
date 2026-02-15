@@ -55,6 +55,7 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+
 // Core App Models (Modified to match User Request)
 
 model User {
@@ -65,9 +66,10 @@ model User {
   image         String?
   role          String    @default("student") // 'student' | 'admin'
   isBlocked     Boolean   @default(false)
+  pendingFine   Float     @default(0)
   
   // New Profile Fields
-  coins         Float     @default(100.0)
+  coins         Float     @default(500.0)
   bio           String?
   phoneNumber   String?
   
@@ -84,6 +86,9 @@ model User {
   sentTransactions     Transaction[] @relation("SentTransactions")
   receivedTransactions Transaction[] @relation("ReceivedTransactions")
   wishlist             Wishlist[]
+  complaints           Complaint[]   // User who filed the complaint
+  adminActions         AdminActionLog[] @relation("AdminActions")
+  adminTargetActions   AdminActionLog[] @relation("AdminTargetUser")
 }
 
 model Item {
@@ -99,7 +104,12 @@ model Item {
   condition    String         @default("Used") // 'New' | 'Like New' | 'Good' | 'Fair' | 'Poor'
   type         String         @default("Rent") // 'Sell' | 'Rent'
   
-  status       String         @default("active") // 'active' | 'inactive' | 'sold'
+  // Enhanced for Time-Slot Renting
+  rentCoins    Float          @default(0)
+  date         String?        // YYYY-MM-DD (for specific date availability)
+  timeSlot     String?        // 'Morning' | 'Evening' (ENUM simulation)
+  
+  status       String         @default("active") // 'active' | 'inactive' | 'sold' | 'AVAILABLE' | 'PENDING' | 'BOOKED' | 'COMPLETED' | 'EXPIRED'
   
   ownerId      String
   owner        User           @relation("UserItems", fields: [ownerId], references: [id], onDelete: Cascade)
@@ -131,8 +141,12 @@ model Booking {
   borrowerId String
   borrower   User     @relation("UserBookings", fields: [borrowerId], references: [id], onDelete: Cascade)
   date       String // The specific day requested (e.g., "2024-03-20")
-  status     String   @default("pending") // 'pending' | 'accepted' | 'rejected'
+  timeSlot   String? // 'Morning' | 'Evening'
+  
+  status     String   @default("pending") // 'pending' | 'accepted' | 'rejected' | 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED'
   createdAt  DateTime @default(now())
+  
+  complaints Complaint[]
 }
 
 model Notification {
@@ -149,7 +163,7 @@ model Notification {
 model Transaction {
   id          String   @id @default(cuid())
   amount      Float
-  type        String   // 'PURCHASE', 'RENT', 'DEPOSIT', 'WITHDRAWAL'
+  type        String   // 'RENT_PAYMENT' | 'REFUND' | 'FINE' | 'ADMIN_ADJUSTMENT'
   status      String   @default("COMPLETED")
   
   fromUserId  String?
@@ -160,6 +174,9 @@ model Transaction {
   
   itemId      String?
   item        Item?    @relation(fields: [itemId], references: [id])
+  
+  referenceId  String?  // bookingId or complaintId
+  balanceAfter Float?   // user's balance after this transaction
   
   createdAt   DateTime @default(now())
 }
@@ -175,4 +192,34 @@ model Wishlist {
   createdAt DateTime @default(now())
   
   @@unique([userId, itemId])
+}
+
+model Complaint {
+  id               String   @id @default(cuid())
+  bookingId        String
+  booking          Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  
+  complainerId     String
+  complainer       User     @relation(fields: [complainerId], references: [id], onDelete: Cascade)
+  
+  description      String
+  status           String   @default("OPEN") // 'OPEN' | 'UNDER_REVIEW' | 'RESOLVED' | 'REJECTED' | 'ACTION_TAKEN'
+  adminNotes       String?
+  resolutionAction String   @default("NONE") // 'NONE' | 'ROLLBACK' | 'FINE' | 'WARNING'
+  
+  createdAt        DateTime @default(now())
+}
+
+model AdminActionLog {
+  id           String   @id @default(cuid())
+  adminId      String
+  admin        User     @relation("AdminActions", fields: [adminId], references: [id])
+  actionType   String   // 'BLOCK_USER' | 'UNBLOCK_USER' | 'ROLLBACK' | 'FINE' | 'VERIFY_COMPLAINT' | 'REJECT_COMPLAINT'
+  targetUserId String?
+  targetUser   User?    @relation("AdminTargetUser", fields: [targetUserId], references: [id])
+  bookingId    String?
+  complaintId  String?
+  coinsChanged Float?
+  notes        String?
+  createdAt    DateTime @default(now())
 }

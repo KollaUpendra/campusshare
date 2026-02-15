@@ -21,8 +21,8 @@ import Link from "next/link";
 import db from "@/lib/db";
 async function getItems(query?: string, category?: string, type?: string) {
   try {
-    const where: any = { status: "active" };
-    
+    const where: any = { status: { in: ["active", "AVAILABLE"] } }; // Fix: include items set back to AVAILABLE after booking rejection
+
     if (query) {
       where.OR = [
         { title: { contains: query, mode: 'insensitive' } },
@@ -31,11 +31,11 @@ async function getItems(query?: string, category?: string, type?: string) {
     }
 
     if (category && category !== "All") {
-        where.category = category;
+      where.category = category;
     }
 
     if (type && type !== "All") {
-        where.type = type;
+      where.type = type;
     }
 
     const items = await db.item.findMany({
@@ -66,14 +66,14 @@ import { authOptions } from "@/lib/auth";
 export default async function Home({ searchParams }: { searchParams: Promise<{ query?: string; category?: string; type?: string }> }) {
   const { query, category, type } = await searchParams;
   const items = await getItems(query, category, type);
-  
+
   const session = await getServerSession(authOptions);
   const wishlistSet = new Set<string>();
-  
+
   if (session?.user?.id) {
     const wishlist = await db.wishlist.findMany({
-        where: { userId: session.user.id },
-        select: { itemId: true }
+      where: { userId: session.user.id },
+      select: { itemId: true }
     });
     wishlist.forEach(w => wishlistSet.add(w.itemId));
   }
@@ -95,25 +95,25 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
               className="w-full pl-9 pr-4 py-2 rounded-full border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
-          
+
           <div className="flex gap-2">
-             <select 
-                name="category" 
-                defaultValue={category} 
-                className="px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-             >
-                {CATEGORIES.map(c => <option key={c} value={c}>{c === "All" ? "All Categories" : c}</option>)}
-             </select>
+            <select
+              name="category"
+              defaultValue={category}
+              className="px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              {CATEGORIES.map(c => <option key={c} value={c}>{c === "All" ? "All Categories" : c}</option>)}
+            </select>
 
-             <select 
-                name="type" 
-                defaultValue={type} 
-                className="px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-             >
-                {TYPES.map(t => <option key={t} value={t}>{t === "All" ? "All Types" : t}</option>)}
-             </select>
+            <select
+              name="type"
+              defaultValue={type}
+              className="px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              {TYPES.map(t => <option key={t} value={t}>{t === "All" ? "All Types" : t}</option>)}
+            </select>
 
-             <Button type="submit">Filter</Button>
+            <Button type="submit">Filter</Button>
           </div>
         </form>
       </section>

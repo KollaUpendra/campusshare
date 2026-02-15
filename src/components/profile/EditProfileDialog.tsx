@@ -2,13 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -78,9 +78,9 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
                             Profile Image
                         </Label>
                         <div className="col-span-3">
-                             {/* Minimal Cloudinary Upload Widget */}
-                             <CldUploadWidget 
-                                signatureEndpoint="/api/sign-cloudinary-params"
+                            {/* Minimal Cloudinary Upload Widget */}
+                            <CldUploadWidget
+                                signatureEndpoint="/api/sign-cloudinary" // Fix: match actual API route path
                                 onSuccess={(result: any) => {
                                     setImageUrl(result.info.secure_url);
                                 }}
