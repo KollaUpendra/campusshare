@@ -108,10 +108,22 @@ export async function POST(
             });
 
             // 4. Update Booking Status -> COMPLETED
-            const updatedBooking = await tx.booking.update({
-                where: { id: bookingId },
+            // 4. Update Booking Status -> COMPLETED (Atomic Check)
+            // Use updateMany to ensure we only update if status is still ACCEPTED
+            const updateResult = await tx.booking.updateMany({
+                where: { 
+                    id: bookingId,
+                    status: "ACCEPTED"
+                },
                 data: { status: "COMPLETED" }
             });
+
+            if (updateResult.count === 0) {
+                 throw new Error("Booking is no longer in ACCEPTED state. Payment failed.");
+            }
+
+            // Return the updated booking structure (simulated since updateMany doesn't return it)
+            const updatedBooking = { ...booking, status: "COMPLETED" };
 
             // 5. Update Item Status -> SOLD (if Sell) or BOOKED (if Rent)
             // Note: Currently 'Rent' items just toggle status, but usually 'BOOKED' is fine.
