@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import db from "@/lib/db";
+import db from "@/infrastructure/db/client";
 import { Badge } from "@/components/ui/badge";
 
 export default async function AdminBookingsPage() {
@@ -17,9 +17,9 @@ export default async function AdminBookingsPage() {
         orderBy: { createdAt: "desc" },
     });
 
-    const pendingCount = bookings.filter((b) => b.status === "pending").length;
-    const acceptedCount = bookings.filter((b) => b.status === "accepted").length;
-    const rejectedCount = bookings.filter((b) => b.status === "rejected").length;
+    const pendingCount = bookings.filter((b) => ["pending", "PENDING"].includes(b.status)).length;
+    const acceptedCount = bookings.filter((b) => ["accepted", "ACCEPTED"].includes(b.status)).length;
+    const rejectedCount = bookings.filter((b) => ["rejected", "REJECTED"].includes(b.status)).length;
 
     return (
         <div className="space-y-6">
@@ -72,9 +72,9 @@ export default async function AdminBookingsPage() {
                                     <td className="p-3">
                                         <Badge
                                             variant={
-                                                booking.status === "accepted"
+                                                ["accepted", "ACCEPTED"].includes(booking.status)
                                                     ? "default"
-                                                    : booking.status === "rejected"
+                                                    : ["rejected", "REJECTED"].includes(booking.status)
                                                         ? "destructive"
                                                         : "secondary"
                                             }

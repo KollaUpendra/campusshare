@@ -13,14 +13,23 @@
 export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
+<<<<<<< HEAD
 import db from "@/lib/db";
 import { User, Calendar, IndianRupee } from "lucide-react";
+=======
+import db from "@/infrastructure/db/client";
+import { User, Calendar, DollarSign } from "lucide-react";
+>>>>>>> 285976c544e7958d8516f7ef41f6dafc0ccc57d7
 import { Badge } from "@/components/ui/badge";
-import BookingRequestButton from "@/components/items/BookingRequestButton";
-import EditItemActions from "@/components/items/EditItemActions";
+import BookingRequestButton from "@/features/items/components/BookingRequestButton";
+import EditItemActions from "@/features/items/components/EditItemActions";
 import { getServerSession } from "next-auth";
+<<<<<<< HEAD
 import { authOptions } from "@/lib/auth";
 import Image from "next/image";
+=======
+import { authOptions } from "@/config/auth.config";
+>>>>>>> 285976c544e7958d8516f7ef41f6dafc0ccc57d7
 
 type Props = {
     params: Promise<{ id: string }>;

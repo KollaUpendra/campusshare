@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import db from "@/lib/db";
+import { authOptions } from "@/config/auth.config";
+import db from "@/infrastructure/db/client";
 
 /**
  * POST /admin/complaint/fine/[complaintId]

@@ -30,7 +30,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 
 type Booking = {
     id: string;
@@ -65,7 +65,7 @@ export default function BookingsPage() {
 
     useEffect(() => {
         if (status === "unauthenticated") {
-            router.push("/api/auth/signin");
+            router.push("/");
             return;
         }
         if (status === "authenticated") {
@@ -190,8 +190,13 @@ export default function BookingsPage() {
                                     <CardTitle className="text-base truncate">{booking.item.title}</CardTitle>
                                 </Link>
                                 <Badge variant={
+<<<<<<< HEAD
                                     (booking.status === "accepted" || booking.status === "ACCEPTED") ? "default" :
                                         (booking.status === "rejected" || booking.status === "REJECTED") ? "destructive" : "secondary"
+=======
+                                    ["accepted", "ACCEPTED"].includes(booking.status) ? "default" :
+                                        ["rejected", "REJECTED"].includes(booking.status) ? "destructive" : "secondary"
+>>>>>>> 285976c544e7958d8516f7ef41f6dafc0ccc57d7
                                 }>
                                     {booking.status}
                                 </Badge>
@@ -215,7 +220,11 @@ export default function BookingsPage() {
                                     </div>
                                 )}
 
+<<<<<<< HEAD
                                 {activeTab === "incoming" && (booking.status === "pending" || booking.status === "PENDING") && (
+=======
+                                {activeTab === "incoming" && ["pending", "PENDING"].includes(booking.status) && (
+>>>>>>> 285976c544e7958d8516f7ef41f6dafc0ccc57d7
                                     <div className="flex gap-2 mt-4">
                                         <Button
                                             size="sm"
@@ -236,10 +245,11 @@ export default function BookingsPage() {
                                 )}
 
                                 {activeTab === "outgoing" && (booking.status === "accepted" || booking.status === "ACCEPTED") && (
-                                     <div className="mt-4">
-                                         <Button 
-                                            className="w-full bg-green-600 hover:bg-green-700" 
+                                    <div className="mt-4">
+                                        <Button
+                                            className="w-full bg-green-600 hover:bg-green-700"
                                             size="sm"
+<<<<<<< HEAD
                                             onClick={() => {
                                                 setActiveBookingId(booking.id);
                                                 setPaymentAmount(booking.item.price);
@@ -249,6 +259,24 @@ export default function BookingsPage() {
                                             Pay Now (₹{booking.item.price})
                                          </Button>
                                      </div>
+=======
+                                            onClick={async () => {
+                                                if (!confirm(`Pay ${booking.item.price} coins now?`)) return;
+                                                try {
+                                                    const res = await fetch(`/api/bookings/${booking.id}/pay`, { method: "POST" });
+                                                    if (!res.ok) throw new Error(await res.text());
+                                                    alert("Payment Successful!");
+                                                    fetchBookings(); // Refresh list
+                                                    router.refresh();
+                                                } catch (e) {
+                                                    alert(e instanceof Error ? e.message : "Payment failed");
+                                                }
+                                            }}
+                                        >
+                                            Pay Now ({booking.item.price} Coins)
+                                        </Button>
+                                    </div>
+>>>>>>> 285976c544e7958d8516f7ef41f6dafc0ccc57d7
                                 )}
                             </CardContent>
                         </Card>

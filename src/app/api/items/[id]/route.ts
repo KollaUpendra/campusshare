@@ -10,9 +10,9 @@
  */
 
 import { NextResponse } from "next/server";
-import db from "@/lib/db";
+import db from "@/infrastructure/db/client";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/config/auth.config";
 
 export async function GET(req: Request, props: { params: Promise<{ id: string }> }) {
     const params = await props.params;

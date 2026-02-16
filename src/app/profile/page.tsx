@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import db from "@/lib/db";
+import { authOptions } from "@/config/auth.config";
+import db from "@/infrastructure/db/client";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import { User, Coins, Phone, FileText } from "lucide-react";
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import EditProfileDialog from "@/components/profile/EditProfileDialog";
+import EditProfileDialog from "@/features/profile/components/EditProfileDialog";
 
 export default async function ProfilePage() {
     const session = await getServerSession(authOptions);

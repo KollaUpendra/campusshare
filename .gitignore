@@ -49,3 +49,14 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Junk files (logs, build outputs, debug outputs)
+*.log
+server-debug*.log
+build-*.txt
+build_*.txt
+test-*.txt
+lint-*.txt
+verify_*.txt
+*-output.txt
+push_error.log

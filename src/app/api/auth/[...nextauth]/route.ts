@@ -9,7 +9,7 @@
  */
 
 import NextAuth from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/config/auth.config"
 
 const handler = NextAuth(authOptions)
 

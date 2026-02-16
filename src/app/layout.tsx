@@ -20,7 +20,9 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
-import Providers from "@/components/auth/Providers";
+import Providers from "@/features/auth/components/Providers";
+import DevToolsHider from "@/components/layout/DevToolsHider";
+import Link from "next/link";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -52,7 +54,7 @@ export const viewport: Viewport = {
  * @param {React.ReactNode} props.children - The page content to be rendered.
  * @returns {JSX.Element} The root html structure.
  */
-import DevToolsHider from "@/components/layout/DevToolsHider";
+
 
 export default function RootLayout({
   children,
@@ -79,9 +81,9 @@ export default function RootLayout({
             {/* Footer with Legal Links */}
             <footer className="py-6 text-center text-sm text-gray-500 pb-24 md:pb-6">
               <div className="flex justify-center gap-4">
-                <a href="/privacy" className="hover:underline hover:text-gray-900">Privacy Policy</a>
+                <Link href="/privacy" className="hover:underline hover:text-gray-900">Privacy Policy</Link>
                 <span>•</span>
-                <a href="/terms" className="hover:underline hover:text-gray-900">Terms of Service</a>
+                <Link href="/terms" className="hover:underline hover:text-gray-900">Terms of Service</Link>
               </div>
               <p className="mt-2">© {new Date().getFullYear()} CampusShare</p>
             </footer>

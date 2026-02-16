@@ -16,7 +16,7 @@ import { Bell, User as UserIcon } from "lucide-react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { useSession } from "next-auth/react"
-import { LoginButton } from "@/components/auth/LoginButton"
+import { LoginButton } from "@/features/auth/components/LoginButton"
 
 /**
  * Header Component
