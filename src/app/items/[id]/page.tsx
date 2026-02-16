@@ -14,19 +14,18 @@ export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
 import db from "@/lib/db";
-import { User, Calendar, DollarSign } from "lucide-react";
+import { User, Calendar, IndianRupee } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import BookingRequestButton from "@/components/items/BookingRequestButton";
 import EditItemActions from "@/components/items/EditItemActions";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import Image from "next/image";
 
 type Props = {
     params: Promise<{ id: string }>;
     searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 };
-
-import Image from "next/image";
 
 export default async function ItemDetailsPage(props: Props) {
     const params = await props.params;
@@ -107,8 +106,8 @@ export default async function ItemDetailsPage(props: Props) {
                         <span>{item.owner.name || "Unknown Owner"}</span>
                     </div>
                     <div className="flex items-center gap-1 text-primary font-bold text-xl">
-                        <DollarSign className="h-5 w-5" />
-                        <span>{item.price} {item.type === "Rent" ? "/day" : " Coins"}</span>
+                        <IndianRupee className="h-5 w-5" />
+                        <span>{item.price} {item.type === "Rent" ? "/day" : ""}</span>
                     </div>
                 </div>
             </div>
@@ -122,16 +121,26 @@ export default async function ItemDetailsPage(props: Props) {
                 {item.type === "Rent" && (
                     <div>
                         <h3 className="font-semibold mb-2 flex items-center gap-2">
-                            <Calendar className="h-4 w-4" />
-                            Available Days
+                             <Calendar className="h-4 w-4" />
+                             Availability
                         </h3>
                         <div className="flex flex-wrap gap-2">
-                            {item.availability.map((a: any) => (
-                                <Badge key={a.dayOfWeek} variant="secondary">
-                                    {a.dayOfWeek}
-                                </Badge>
-                            ))}
+                            {item.availability && item.availability.length > 0 ? (
+                                item.availability.map((a: any) => (
+                                    <Badge key={a.dayOfWeek} variant="secondary">
+                                        {a.dayOfWeek}
+                                    </Badge>
+                                ))
+                            ) : (
+                                <Badge variant="secondary">All Days of Week</Badge>
+                            )}
                         </div>
+                        {/* Type cast to any to handle new fields not yet in types */}
+                        {(item as any).availableFrom && (item as any).availableUntil && (
+                             <p className="text-sm text-muted-foreground mt-2">
+                                From: {new Date((item as any).availableFrom).toLocaleDateString()} — Until: {new Date((item as any).availableUntil).toLocaleDateString()}
+                             </p>
+                        )}
                     </div>
                 )}
             </div>
@@ -145,6 +154,8 @@ export default async function ItemDetailsPage(props: Props) {
                             itemId={item.id} 
                             price={item.price} 
                             availableDays={item.availability.map((a: any) => a.dayOfWeek)}
+                            availableFrom={(item as any).availableFrom}
+                            availableUntil={(item as any).availableUntil}
                             type={item.type}
                             currentRequest={existingBooking}
                         />

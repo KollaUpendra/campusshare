@@ -47,19 +47,25 @@ export async function POST(
         const rentCost = (item as any).rentCoins || 0;
         const renter = booking.borrower;
 
+        const body = await req.json().catch(() => ({}));
+        const { pickupLocation } = body;
+
         // --- ATOMIC TRANSACTION: STATUS UPDATE ONLY ---
         const result = await db.$transaction(async (tx) => {
-            // 1. Update Booking Status -> ACCEPTED
+            // 1. Update Booking Status -> ACCEPTED & Save Pickup Loc
             const updatedBooking = await tx.booking.update({
                 where: { id: bookingId },
-                data: { status: "ACCEPTED" }
+                data: { 
+                    status: "ACCEPTED",
+                    pickupLocation: pickupLocation || null
+                } as any
             });
 
             // 2. Notify Renter
             await tx.notification.create({
                 data: {
                     userId: renter.id,
-                    message: `Your request for ${item.title} has been ACCEPTED! Please ensure you have enough balance and proceed to Pay.`
+                    message: `Your request for ${item.title} has been ACCEPTED! Pickup: ${pickupLocation || 'Contact Owner'}. Please proceed to Pay.`
                 }
             });
 

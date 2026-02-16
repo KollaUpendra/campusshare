@@ -39,7 +39,18 @@ export async function POST(
         }
 
         const item = booking.item;
-        const cost = item.price; // Use item price (rent per day or sell price)
+        
+        // Calculate Cost dynamically based on days
+        let cost = item.price;
+        const bookingAny = booking as any;
+        if (item.type === 'Rent' && bookingAny.startDate && bookingAny.endDate) {
+             const start = new Date(bookingAny.startDate);
+             const end = new Date(bookingAny.endDate);
+             const duration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+             cost = item.price * duration;
+        } else if (bookingAny.totalPrice) {
+             cost = bookingAny.totalPrice; // Fallback if saved
+        }
         
         // Renter/Buyer Balance Check
         const renter = await db.user.findUnique({

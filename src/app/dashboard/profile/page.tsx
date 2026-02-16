@@ -33,18 +33,33 @@ export default async function ProfilePage() {
 
     const { user } = session;
 
-    // Fetch User's Items
+    // Fetch User's Data with Transactions
+    const userData = await db.user.findUnique({
+        where: { id: user.id },
+        include: {
+            sentTransactions: {
+                orderBy: { createdAt: "desc" },
+                take: 5,
+                include: { item: true, toUser: { select: { name: true } } }
+            },
+            receivedTransactions: {
+                orderBy: { createdAt: "desc" },
+                take: 5,
+                include: { item: true, fromUser: { select: { name: true } } }
+            }
+        }
+    });
 
-
-
-    try {
-
-
-
-    } catch (error) {
-        console.error("Profile Page Data Fetch Error:", error);
-        // Fallback to empty arrays is handled by initialization
-    }
+    // Merge and sort transactions (Logic from transactions page)
+    const recentTransactions = userData ? [
+        ...userData.sentTransactions
+            .filter((t: any) => t.amount < 0)
+            .map((t: any) => ({ ...t, direction: 'out', amount: Math.abs(t.amount) })),
+        
+        ...userData.receivedTransactions
+            .filter((t: any) => t.amount > 0)
+            .map((t: any) => ({ ...t, direction: 'in' }))
+    ].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3) : [];
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 pb-10">
@@ -63,26 +78,46 @@ export default async function ProfilePage() {
                     <h2 className="text-2xl font-bold">{user.name}</h2>
                     <p className="text-muted-foreground">{user.email}</p>
                     <div className="flex gap-2 justify-center md:justify-start">
-                        <div className="inline-block px-3 py-1 bg-secondary rounded-full text-xs font-medium uppercase tracking-wider">
+                        <div className="bg-secondary text-secondary-foreground hover:bg-secondary/80 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
                             {user.role || "Student"}
                         </div>
                     </div>
                 </div>
                 <div className="flex flex-col gap-2 w-full md:w-auto">
                     {/* We need a client component for SignOut logic since it uses hooks */}
-                    <Button variant="outline" size="sm" asChild className="w-full justify-start">
-                        <Link href="/transactions">
-                            <Settings className="mr-2 h-4 w-4" />
-                            Transactions
-                        </Link>
-                    </Button>
-                    <SignOutButton />
+                    <div className="grid gap-2">
+                        <Button variant="outline" size="sm" asChild className="w-full justify-start">
+                            <Link href="/transactions">
+                                <Settings className="mr-2 h-4 w-4" />
+                                Transactions
+                            </Link>
+                        </Button>
+                        <SignOutButton />
+                    </div>
                 </div>
             </div>
 
-
-
-
+            {/* Recent Transactions Preview */}
+            {recentTransactions.length > 0 && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xl font-bold">Recent Transactions</h3>
+                    </div>
+                    <div className="grid gap-3">
+                        {recentTransactions.map((t) => (
+                            <div key={t.id} className="flex items-center justify-between p-4 border rounded-lg bg-card">
+                                <div>
+                                    <p className="font-medium text-sm">{t.item ? t.item.title : "System Transfer"}</p>
+                                    <p className="text-xs text-muted-foreground">{new Date(t.createdAt).toLocaleDateString()}</p>
+                                </div>
+                                <span className={`font-bold ${t.direction === 'in' ? 'text-green-600' : 'text-red-600'}`}>
+                                    {t.direction === 'in' ? '+' : '-'}₹{t.amount}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

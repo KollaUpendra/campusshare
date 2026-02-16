@@ -19,6 +19,16 @@ import { Loader2, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +55,13 @@ export default function BookingsPage() {
     const [activeTab, setActiveTab] = useState<"outgoing" | "incoming">("outgoing");
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
+    const [pickupDialogOpen, setPickupDialogOpen] = useState(false);
+    const [pickupLocation, setPickupLocation] = useState("");
+    const [activeBookingId, setActiveBookingId] = useState<string | null>(null);
+    const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+    const [paymentAmount, setPaymentAmount] = useState(0);
+    const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+    const [successMessage, setSuccessMessage] = useState("");
 
     useEffect(() => {
         if (status === "unauthenticated") {
@@ -73,14 +90,50 @@ export default function BookingsPage() {
     };
 
     const handleAction = async (bookingId: string, action: "accepted" | "rejected") => {
-        if (!confirm(`Are you sure you want to ${action === "accepted" ? "accept" : "reject"} this request?`)) return;
+        if (action === "accepted") {
+            setActiveBookingId(bookingId);
+            setPickupLocation("Main Gate"); // Default
+            setPickupDialogOpen(true);
+            return;
+        }
 
+        // Reject Logic
+        if (!confirm(`Are you sure you want to reject this request?`)) return;
+        await processBooking(bookingId, "rejected");
+    };
+
+    const confirmAccept = async () => {
+        if (!activeBookingId) return;
+        await processBooking(activeBookingId, "accepted", pickupLocation);
+        setPickupDialogOpen(false);
+    };
+
+    const confirmPayment = async () => {
+        if (!activeBookingId) return;
         try {
-            // Fix: Use dedicated accept/reject endpoints that handle coin transfer,
-            // item status updates, transaction records, and notifications atomically
+            const res = await fetch(`/api/bookings/${activeBookingId}/pay`, { method: "POST" });
+            if(!res.ok) throw new Error(await res.text());
+            
+            // Success
+            setPaymentDialogOpen(false);
+            fetchBookings(); // Refresh list
+            router.refresh();
+            setSuccessMessage("Payment Successful!");
+            setSuccessDialogOpen(true);
+        } catch(e) {
+            alert(e instanceof Error ? e.message : "Payment failed");
+        }
+    };
+
+    const processBooking = async (bookingId: string, action: "accepted" | "rejected", location?: string) => {
+        try {
             const endpoint = action === "accepted" ? "accept" : "reject";
+            const body = action === "accepted" ? { pickupLocation: location } : {};
+            
             const res = await fetch(`/api/bookings/${bookingId}/${endpoint}`, {
                 method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
             });
 
             if (!res.ok) {
@@ -88,11 +141,10 @@ export default function BookingsPage() {
                 throw new Error(errorText || "Failed to update");
             }
 
-            // Optimistic update — status from accept/reject endpoints is uppercase
             const newStatus = action === "accepted" ? "ACCEPTED" : "REJECTED";
             setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus as any } : b));
         } catch (error) {
-            alert(`Failed to ${action === "accepted" ? "accept" : "reject"}: ${error instanceof Error ? error.message : "Unknown error"}`);
+            alert(`Failed to ${action}: ${error instanceof Error ? error.message : "Unknown error"}`);
         }
     };
 
@@ -138,8 +190,8 @@ export default function BookingsPage() {
                                     <CardTitle className="text-base truncate">{booking.item.title}</CardTitle>
                                 </Link>
                                 <Badge variant={
-                                    booking.status === "accepted" ? "default" :
-                                        booking.status === "rejected" ? "destructive" : "secondary"
+                                    (booking.status === "accepted" || booking.status === "ACCEPTED") ? "default" :
+                                        (booking.status === "rejected" || booking.status === "REJECTED") ? "destructive" : "secondary"
                                 }>
                                     {booking.status}
                                 </Badge>
@@ -163,7 +215,7 @@ export default function BookingsPage() {
                                     </div>
                                 )}
 
-                                {activeTab === "incoming" && booking.status === "pending" && (
+                                {activeTab === "incoming" && (booking.status === "pending" || booking.status === "PENDING") && (
                                     <div className="flex gap-2 mt-4">
                                         <Button
                                             size="sm"
@@ -188,20 +240,13 @@ export default function BookingsPage() {
                                          <Button 
                                             className="w-full bg-green-600 hover:bg-green-700" 
                                             size="sm"
-                                            onClick={async () => {
-                                                if(!confirm(`Pay ${booking.item.price} coins now?`)) return;
-                                                try {
-                                                    const res = await fetch(`/api/bookings/${booking.id}/pay`, { method: "POST" });
-                                                    if(!res.ok) throw new Error(await res.text());
-                                                    alert("Payment Successful!");
-                                                    fetchBookings(); // Refresh list
-                                                    router.refresh(); 
-                                                } catch(e) {
-                                                    alert(e instanceof Error ? e.message : "Payment failed");
-                                                }
+                                            onClick={() => {
+                                                setActiveBookingId(booking.id);
+                                                setPaymentAmount(booking.item.price);
+                                                setPaymentDialogOpen(true);
                                             }}
                                          >
-                                            Pay Now ({booking.item.price} Coins)
+                                            Pay Now (₹{booking.item.price})
                                          </Button>
                                      </div>
                                 )}
@@ -210,6 +255,52 @@ export default function BookingsPage() {
                     ))}
                 </div>
             )}
+
+            <Dialog open={pickupDialogOpen} onOpenChange={setPickupDialogOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Accept Request</DialogTitle>
+                        <DialogDescription>
+                            Where should the borrower pick up this item?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="location" className="text-right">
+                                Location
+                            </Label>
+                            <Input
+                                id="location"
+                                value={pickupLocation}
+                                onChange={(e) => setPickupLocation(e.target.value)}
+                                className="col-span-3"
+                                placeholder="e.g. Main Gate, Library"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="submit" onClick={confirmAccept}>Confirm & Accept</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Payment Confirmation Dialog */}
+            <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Confirm Payment</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to pay <strong>₹{paymentAmount}</strong> for this booking?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setPaymentDialogOpen(false)}>Cancel</Button>
+                        <Button className="bg-green-600 hover:bg-green-700" onClick={confirmPayment}>
+                            Confirm Payment (₹{paymentAmount})
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

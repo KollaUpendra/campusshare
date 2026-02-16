@@ -40,8 +40,13 @@ export default async function TransactionsPage() {
 
     // Merge and sort transactions
     const transactions = [
-        ...userData.sentTransactions.map((t: any) => ({ ...t, direction: 'out' })),
-        ...userData.receivedTransactions.map((t: any) => ({ ...t, direction: 'in' }))
+        ...userData.sentTransactions
+            .filter((t: any) => t.amount < 0) // Only show debits (money leaving)
+            .map((t: any) => ({ ...t, direction: 'out', amount: Math.abs(t.amount) })),
+        
+        ...userData.receivedTransactions
+            .filter((t: any) => t.amount > 0) // Only show credits (money entering)
+            .map((t: any) => ({ ...t, direction: 'in' }))
     ].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return (
@@ -89,7 +94,7 @@ export default async function TransactionsPage() {
                                 </div>
                                 <div className="text-right">
                                     <p className={`font-bold ${t.direction === 'in' ? 'text-green-600' : 'text-red-600'}`}>
-                                        {t.direction === 'in' ? '+' : '-'}{t.amount}
+                                        {t.direction === 'in' ? '+' : '-'}₹{t.amount}
                                     </p>
                                     <Badge variant="outline" className="text-[10px] mt-1 capitalize">
                                         {t.type.toLowerCase().replace('_', ' ')}

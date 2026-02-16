@@ -24,26 +24,48 @@ interface BookingRequestButtonProps {
     itemId: string;
     price: number;
     availableDays: string[];
+    availableFrom?: string | null;
+    availableUntil?: string | null;
     type?: string;
     currentRequest?: any; // Booking object
 }
 
-export default function BookingRequestButton({ itemId, price, availableDays, type = "Rent", currentRequest }: BookingRequestButtonProps) {
-    const [date, setDate] = useState<Date | undefined>(undefined);
+export default function BookingRequestButton({ 
+    itemId, 
+    price, 
+    availableDays, 
+    availableFrom,
+    availableUntil,
+    type = "Rent", 
+    currentRequest 
+}: BookingRequestButtonProps) {
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const router = useRouter();
     const { data: session } = useSession();
 
+    // Helper to get local date string YYYY-MM-DD
+    const getTodayString = () => {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     const isDateDisabled = (d: Date) => {
-        const dayName = format(d, "EEEE");
-        if (d < new Date(new Date().setHours(0, 0, 0, 0))) return true;
-        return !availableDays.includes(dayName);
+        return false; // Allow any date logic for now, handled by API mostly
     };
 
     const handlePay = async () => {
-        if (!currentRequest) return;
-        if (!confirm(`Confirm payment of ${price} coins?`)) return;
+        let confirmMsg = `Confirm payment of ${price} coins?`;
+        if (currentRequest?.totalPrice) {
+             confirmMsg = `Confirm payment of ${currentRequest.totalPrice} coins?`;
+        }
+
+        if (!confirm(confirmMsg)) return;
 
         setIsLoading(true);
         try {
@@ -66,7 +88,7 @@ export default function BookingRequestButton({ itemId, price, availableDays, typ
         }
     };
 
-    const handleRequest = async (requestDate?: string) => {
+    const handleRequest = async (start?: string, end?: string) => {
         if (!session) {
             alert("Please sign in to book items");
             return;
@@ -75,12 +97,14 @@ export default function BookingRequestButton({ itemId, price, availableDays, typ
         setIsLoading(true);
         try {
             const body: any = { itemId };
-            if (requestDate) {
-                body.date = requestDate;
+            if (start) {
+                body.startDate = start;
+                body.endDate = end || start;
+                body.date = start; // Legacy fallback
             } else if (type === "Sell") {
-                // For sell, just send today's date or let backend handle
-                // Backend expects date for Rent, optional/handled for Sell
-                 body.date = new Date().toISOString().split("T")[0];
+                 const today = new Date().toISOString().split("T")[0];
+                 body.date = today;
+                 body.startDate = today;
             }
 
             const res = await fetch("/api/bookings", {
@@ -104,6 +128,13 @@ export default function BookingRequestButton({ itemId, price, availableDays, typ
         }
     };
 
+    // Calculate total price preview
+    const duration = startDate && endDate 
+        ? Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1 
+        : 1;
+    const totalPrice = price * (duration > 0 ? duration : 1);
+
+
     // --- RENDER STATES ---
 
     if (currentRequest) {
@@ -116,11 +147,19 @@ export default function BookingRequestButton({ itemId, price, availableDays, typ
             );
         }
         if (currentRequest.status === "ACCEPTED" || currentRequest.status === "accepted") {
+             const payAmount = currentRequest.totalPrice || price;
              return (
-                <Button className="w-full bg-green-600 hover:bg-green-700 text-white" size="lg" onClick={handlePay} disabled={isLoading}>
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    Pay Now ({price} Coins)
-                </Button>
+                <>
+                    <Button className="w-full bg-green-600 hover:bg-green-700 text-white" size="lg" onClick={handlePay} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Pay Now (₹{payAmount})
+                    </Button>
+                    {currentRequest.pickupLocation && (
+                        <p className="text-xs text-center text-muted-foreground mt-2">
+                            Pickup: <span className="font-medium text-foreground">{currentRequest.pickupLocation}</span>
+                        </p>
+                    )}
+                </>
             );
         }
         if (currentRequest.status === "COMPLETED" || currentRequest.status === "completed") {
@@ -148,46 +187,81 @@ export default function BookingRequestButton({ itemId, price, availableDays, typ
         <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
                 <Button className="w-full" size="lg">
-                    Request for {price} Coins/Day
+                    Request for ₹{price} /Day
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="center">
+            <PopoverContent className="w-80 p-0" align="center">
                 <div className="p-4 space-y-4">
                     <div className="space-y-2">
-                        <h4 className="font-medium leading-none">Select Date</h4>
-                        <p className="text-sm text-muted-foreground">
-                            Pick an available day.
-                        </p>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <input
-                            type="date"
-                            className="p-2 border rounded-md"
-                            min={new Date().toISOString().split("T")[0]}
-                            onChange={(e) => {
-                                const val = e.target.value;
-                                if (!val) {
-                                    setDate(undefined);
-                                    return;
-                                }
-                                setDate(new Date(val));
-                            }}
-                        />
-                         {date && isDateDisabled(date) && (
-                            <p className="text-xs text-red-500">
-                                Not available on {format(date, "EEEE")}
-                            </p>
-                        )}
-                        {date && !isDateDisabled(date) && (
-                            <p className="text-xs text-green-600">
-                                Available on {format(date, "EEEE")}
-                            </p>
-                        )}
+                        <h4 className="font-medium leading-none">Select Dates</h4>
+                        <div className="text-sm text-muted-foreground">
+                            {availableDays.length > 0 ? (
+                                <p>Days: <span className="font-medium text-foreground">{availableDays.join(", ")}</span></p>
+                            ) : (
+                                <p>Days: <span className="font-medium text-foreground">Every Day</span></p>
+                            )}
+                            
+                            {(availableFrom || availableUntil) && (
+                                <p className="text-xs mt-1">
+                                    Range: {availableFrom ? new Date(availableFrom).toLocaleDateString() : 'Now'} - {availableUntil ? new Date(availableUntil).toLocaleDateString() : 'Indefinite'}
+                                </p>
+                            )}
+                        </div>
                     </div>
 
+                    <div className="grid grid-cols-2 gap-2">
+                        <div>
+                            <label className="text-xs font-medium">Start</label>
+                            <input
+                                type="date"
+                                className="w-full p-2 border rounded-md text-sm"
+                                min={getTodayString()}
+                                max={availableUntil ? availableUntil : undefined}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (!val) {
+                                        setStartDate(undefined);
+                                        return;
+                                    }
+                                    const [y, m, d] = val.split('-').map(Number);
+                                    setStartDate(new Date(y, m - 1, d));
+                                }}
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium">End</label>
+                            <input
+                                type="date"
+                                className="w-full p-2 border rounded-md text-sm"
+                                min={startDate ? format(startDate, "yyyy-MM-dd") : getTodayString()}
+                                max={availableUntil ? availableUntil : undefined}
+                                disabled={!startDate}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (!val) {
+                                        setEndDate(undefined);
+                                        return;
+                                    }
+                                    const [y, m, d] = val.split('-').map(Number);
+                                    setEndDate(new Date(y, m - 1, d));
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {(startDate && endDate) && (
+                         <div className="bg-muted p-2 rounded-md text-sm text-center">
+                            <p className="font-medium">Total: ₹{totalPrice}</p>
+                            <p className="text-xs text-muted-foreground">For {duration} day{(duration > 1 ? 's' : '')}</p>
+                         </div>
+                    )}
+
                     <Button
-                        onClick={() => handleRequest(date ? format(date, "yyyy-MM-dd") : undefined)}
-                        disabled={!date || isDateDisabled(date) || isLoading}
+                        onClick={() => handleRequest(
+                            startDate ? format(startDate, "yyyy-MM-dd") : undefined,
+                            endDate ? format(endDate, "yyyy-MM-dd") : (startDate ? format(startDate, "yyyy-MM-dd") : undefined)
+                        )}
+                        disabled={!startDate || isLoading}
                         className="w-full"
                     >
                         {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Request"}
@@ -196,4 +270,5 @@ export default function BookingRequestButton({ itemId, price, availableDays, typ
             </PopoverContent>
         </Popover>
     );
+
 }
