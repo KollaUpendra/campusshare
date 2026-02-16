@@ -10,9 +10,9 @@
  */
 
 import { NextResponse } from "next/server";
-import db from "@/infrastructure/db/client";
+import db from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/config/auth.config";
+import { authOptions } from "@/lib/auth";
 
 /**
  * POST Handler for Items
@@ -115,7 +115,7 @@ export async function POST(req: Request) {
  * @param {Request} req - The HTTP request object.
  * @returns {NextResponse} JSON list of items.
  */
-import { processExpirations } from "@/services/scheduler.service";
+import { processExpirations } from "@/lib/scheduler";
 
 export async function GET(req: Request) {
     try {

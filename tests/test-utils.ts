@@ -1,5 +1,5 @@
 import { Page } from '@playwright/test';
-import db from '../src/infrastructure/db/client';
+import db from '../src/lib/db';
 
 export const createTestUser = async (role: string = 'student') => {
     const email = `test-${Date.now()}-${Math.floor(Math.random() * 1000)}@example.com`;

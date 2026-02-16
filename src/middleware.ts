@@ -66,5 +66,5 @@ export default withAuth(
  * Middleware Configuration
  * Defines which paths should trigger the middleware.
  */
-export const config = { matcher: ["/dashboard/:path*", "/admin/:path*", "/post-item", "/profile", "/my-items", "/wishlist", "/transactions"] };
+export const config = { matcher: ["/dashboard/:path*", "/admin/:path*", "/post-item"] };
 

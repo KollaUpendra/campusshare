@@ -15,7 +15,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home, PlusCircle, CalendarCheck, User, Package } from "lucide-react"
-import { cn } from "@/utils/cn"
+import { cn } from "@/lib/utils"
 
 /**
  * BottomNav Component
@@ -48,7 +48,7 @@ export default function BottomNav() {
         },
         {
             label: "Profile",
-            href: "/profile",
+            href: "/dashboard/profile",
             icon: User,
         },
     ]

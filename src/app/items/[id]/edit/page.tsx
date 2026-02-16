@@ -16,17 +16,17 @@
  */
 
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/config/auth.config";
-import db from "@/infrastructure/db/client";
+import { authOptions } from "@/lib/auth";
+import db from "@/lib/db";
 import { redirect, notFound } from "next/navigation";
-import AddItemForm from "@/features/items/components/AddItemForm";
+import AddItemForm from "@/components/items/AddItemForm";
 
 export default async function EditItemPage(props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
 
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-        redirect("/");
+        redirect("/api/auth/signin");
     }
 
     const item = await db.item.findUnique({

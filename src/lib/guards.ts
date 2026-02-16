@@ -6,8 +6,8 @@
 
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/config/auth.config";
-import db from "@/infrastructure/db/client";
+import { authOptions } from "@/lib/auth";
+import db from "@/lib/db";
 
 export interface AuthResult {
     session: any;

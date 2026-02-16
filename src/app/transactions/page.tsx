@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/config/auth.config";
-import db from "@/infrastructure/db/client";
+import { authOptions } from "@/lib/auth";
+import db from "@/lib/db";
 import { redirect } from "next/navigation";
 import { ArrowLeft, ArrowDownLeft, ArrowUpRight, History } from "lucide-react";
 import Link from "next/link";
@@ -14,7 +14,7 @@ export default async function TransactionsPage() {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
-        redirect("/");
+        redirect("/api/auth/signin");
     }
 
     const { user } = session;
@@ -53,7 +53,7 @@ export default async function TransactionsPage() {
         <div className="container mx-auto px-4 py-8 max-w-2xl">
             <div className="flex items-center gap-2 mb-6">
                 <Button variant="ghost" size="icon" asChild>
-                    <Link href="/profile">
+                    <Link href="/dashboard/profile">
                         <ArrowLeft className="h-5 w-5" />
                     </Link>
                 </Button>
@@ -69,8 +69,9 @@ export default async function TransactionsPage() {
                         <Card key={t.id} className="overflow-hidden">
                             <CardContent className="p-4 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${t.direction === 'in' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-                                        }`}>
+                                    <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
+                                        t.direction === 'in' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                                    }`}>
                                         {t.direction === 'in' ? <ArrowDownLeft className="h-5 w-5" /> : <ArrowUpRight className="h-5 w-5" />}
                                     </div>
                                     <div>
@@ -83,8 +84,8 @@ export default async function TransactionsPage() {
                                             </span>
                                             <span className="hidden sm:inline">•</span>
                                             <span>
-                                                {t.direction === 'in'
-                                                    ? `From: ${t.fromUser?.name || 'Unknown'}`
+                                                {t.direction === 'in' 
+                                                    ? `From: ${t.fromUser?.name || 'Unknown'}` 
                                                     : `To: ${t.toUser?.name || 'Unknown'}`
                                                 }
                                             </span>

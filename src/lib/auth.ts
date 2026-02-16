@@ -11,7 +11,7 @@
  * Dependencies:
  * - next-auth
  * - @auth/prisma-adapter
- * - @/infrastructure/db/client (Prisma Client)
+ * - @/lib/db (Prisma Client)
  * 
  * Environment Variables:
  * - GOOGLE_CLIENT_ID
@@ -26,7 +26,7 @@ import { NextAuthOptions } from "next-auth"
 import type { Adapter } from "next-auth/adapters"
 import GoogleProvider from "next-auth/providers/google"
 import { PrismaAdapter } from "@auth/prisma-adapter"
-import db from "@/infrastructure/db/client"
+import db from "@/lib/db"
 import CredentialsProvider from "next-auth/providers/credentials"
 
 // ALLOWED_DOMAIN is read at runtime in the signIn callback below

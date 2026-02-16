@@ -1,8 +1,8 @@
 export const dynamic = "force-dynamic";
 
-import db from "@/infrastructure/db/client";
+import db from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
-import AdminItemActions from "@/features/admin/components/AdminItemActions";
+import AdminItemActions from "@/components/admin/AdminItemActions";
 
 export default async function AdminItemsPage() {
     const items = await db.item.findMany({

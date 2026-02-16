@@ -1,4 +1,4 @@
-import db from "@/infrastructure/db/client";
+import db from "@/lib/db";
 
 /**
  * Checks for expired bookings and items and updates their status.

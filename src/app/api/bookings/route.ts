@@ -9,9 +9,9 @@
  */
 
 import { NextResponse } from "next/server";
-import db from "@/infrastructure/db/client";
+import db from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/config/auth.config";
+import { authOptions } from "@/lib/auth";
 
 /**
  * POST Handler for Bookings
