@@ -8,7 +8,7 @@
  * - Provides a "Back" button to return to the home page.
  */
 
-import AddItemForm from "@/features/items/components/AddItemForm";
+import AddItemForm from "@/components/items/AddItemForm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";

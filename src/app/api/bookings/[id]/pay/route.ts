@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import db from "@/infrastructure/db/client";
+import db from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/config/auth.config";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(
     req: Request,
@@ -39,7 +39,18 @@ export async function POST(
         }
 
         const item = booking.item;
-        const cost = item.price; // Use item price (rent per day or sell price)
+        
+        // Calculate Cost dynamically based on days
+        let cost = item.price;
+        const bookingAny = booking as any;
+        if (item.type === 'Rent' && bookingAny.startDate && bookingAny.endDate) {
+             const start = new Date(bookingAny.startDate);
+             const end = new Date(bookingAny.endDate);
+             const duration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+             cost = item.price * duration;
+        } else if (bookingAny.totalPrice) {
+             cost = bookingAny.totalPrice; // Fallback if saved
+        }
         
         // Renter/Buyer Balance Check
         const renter = await db.user.findUnique({
@@ -97,10 +108,22 @@ export async function POST(
             });
 
             // 4. Update Booking Status -> COMPLETED
-            const updatedBooking = await tx.booking.update({
-                where: { id: bookingId },
+            // 4. Update Booking Status -> COMPLETED (Atomic Check)
+            // Use updateMany to ensure we only update if status is still ACCEPTED
+            const updateResult = await tx.booking.updateMany({
+                where: { 
+                    id: bookingId,
+                    status: "ACCEPTED"
+                },
                 data: { status: "COMPLETED" }
             });
+
+            if (updateResult.count === 0) {
+                 throw new Error("Booking is no longer in ACCEPTED state. Payment failed.");
+            }
+
+            // Return the updated booking structure (simulated since updateMany doesn't return it)
+            const updatedBooking = { ...booking, status: "COMPLETED" };
 
             // 5. Update Item Status -> SOLD (if Sell) or BOOKED (if Rent)
             // Note: Currently 'Rent' items just toggle status, but usually 'BOOKED' is fine.

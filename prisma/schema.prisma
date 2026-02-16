@@ -145,7 +145,16 @@ model Booking {
   item       Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
   borrowerId String
   borrower   User     @relation("UserBookings", fields: [borrowerId], references: [id], onDelete: Cascade)
-  date       String // The specific day requested (e.g., "2024-03-20")
+  
+  // Legacy support
+  date       String? // The specific day requested (e.g., "2024-03-20")
+  
+  // New Range Support
+  startDate  String? // YYYY-MM-DD
+  endDate    String? // YYYY-MM-DD
+  totalPrice Float?  // Store the calculated total price for this booking
+  pickupLocation String? // Location specified by owner upon acceptance
+
   timeSlot   String? // 'Morning' | 'Evening'
   
   status     String   @default("pending") // 'pending' | 'accepted' | 'rejected' | 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED'

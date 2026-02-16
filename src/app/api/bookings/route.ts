@@ -9,9 +9,9 @@
  */
 
 import { NextResponse } from "next/server";
-import db from "@/infrastructure/db/client";
+import db from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/config/auth.config";
+import { authOptions } from "@/lib/auth";
 
 /**
  * POST Handler for Bookings
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { itemId, date, timeSlot } = body;
+        const { itemId, date, startDate, endDate, timeSlot } = body;
 
         if (!itemId) {
             return new NextResponse("Missing Item ID", { status: 400 });
@@ -69,37 +69,79 @@ export async function POST(req: Request) {
             return new NextResponse("Item is not available", { status: 400 });
         }
 
-        let bookingDate = date;
+        let bookingStartDate = startDate || date;
+        let bookingEndDate = endDate || date;
+        let totalPrice = item.price;
+        let diffDays = 1;
 
         // Validation based on Type
         if (item.type === 'Rent') {
-            if (!date) return new NextResponse("Date is required for rentals", { status: 400 });
+            if (!bookingStartDate) return new NextResponse("Start Date is required for rentals", { status: 400 });
             
             // Validate date format (YYYY-MM-DD)
             const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-            if (!dateRegex.test(date)) return new NextResponse("Invalid date format", { status: 400 });
+            if (!dateRegex.test(bookingStartDate)) return new NextResponse("Invalid start date format", { status: 400 });
+            if (bookingEndDate && !dateRegex.test(bookingEndDate)) return new NextResponse("Invalid end date format", { status: 400 });
 
-            const dateObj = new Date(date);
-            const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+            // If only one date provided, treat end = start
+            if (!bookingEndDate) bookingEndDate = bookingStartDate;
 
-            // Availability Check
-            const isAvailableDay = item.availability.some(a => a.dayOfWeek === dayOfWeek);
-            if (!isAvailableDay) return new NextResponse(`Item is not available on ${dayOfWeek}s`, { status: 400 });
+            const startObj = new Date(bookingStartDate);
+            const endObj = new Date(bookingEndDate);
 
-            // Expiry Check
-            if (item.date && item.date < new Date().toISOString().split('T')[0]) {
-                return new NextResponse("This item's rental period has expired", { status: 400 });
+            if (endObj < startObj) return new NextResponse("End date cannot be before start date", { status: 400 });
+
+            // Calculate duration in days
+            const diffTime = Math.abs(endObj.getTime() - startObj.getTime());
+            diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // Inclusive (1 day minimum)
+            
+            totalPrice = item.price * diffDays;
+
+            // Check Availability for range (basic check: check start day)
+            // Ideally we check every day in range, but for MVP checking start is okay or we check intersection
+            const dayOfWeek = startObj.toLocaleDateString('en-US', { weekday: 'long' });
+
+            // Availability Check (If restricted)
+            if (item.availability.length > 0) {
+                 const isAvailableDay = item.availability.some(a => a.dayOfWeek === dayOfWeek);
+                 if (!isAvailableDay) return new NextResponse(`Item is not available on ${dayOfWeek}s`, { status: 400 });
             }
 
-            // Double Booking Check
-            const existingBooking = await db.booking.findFirst({
-                where: { itemId, date, status: { notIn: ["rejected", "REJECTED", "CANCELLED"] } }
+            // Expiry Check
+            if ((item as any).availableUntil && (item as any).availableUntil < new Date().toISOString().split('T')[0]) {
+                 return new NextResponse("This item's availability has expired", { status: 400 });
+            }
+
+            // Double Booking Check (Simple Overlap)
+            // Check if any booking exists that overlaps with [start, end]
+            // Existing Start <= New End AND Existing End >= New Start
+            const overlap = await db.booking.findFirst({
+                where: {
+                    itemId,
+                    status: { notIn: ["rejected", "REJECTED", "CANCELLED"] },
+                    OR: [
+                         // Case A: Single date legacy booking overlaps
+                         {
+                            date: {
+                                gte: bookingStartDate,
+                                lte: bookingEndDate
+                            }
+                         },
+                         // Case B: Range booking overlaps
+                         {
+                            startDate: { lte: bookingEndDate },
+                            endDate: { gte: bookingStartDate }
+                         }
+                    ]
+                } as any
             });
-            if (existingBooking) return new NextResponse("Item already booked for this date", { status: 409 });
+            
+            if (overlap) return new NextResponse("Item already booked for these dates", { status: 409 });
         
         } else {
             // Sell: No date needed, but we can set today's date for record
-            bookingDate = new Date().toISOString().split('T')[0];
+            bookingStartDate = new Date().toISOString().split('T')[0];
+            bookingEndDate = bookingStartDate;
         }
 
         // --- CREATE BOOKING (PENDING) ---
@@ -111,10 +153,13 @@ export async function POST(req: Request) {
                 data: {
                     itemId,
                     borrowerId: renter.id,
-                    date: bookingDate,
+                    date: bookingStartDate, // Backward compat
+                    startDate: bookingStartDate,
+                    endDate: bookingEndDate,
+                    totalPrice: totalPrice,
                     timeSlot: timeSlot || null,
                     status: "PENDING"
-                }
+                } as any
             });
 
             // 2. Update Item Status -> PENDING (hides from marketplace)
@@ -127,7 +172,7 @@ export async function POST(req: Request) {
             await tx.notification.create({
                 data: {
                     userId: item.ownerId,
-                    message: `New ${item.type} request for ${item.title} by ${renter.name || "a user"}`
+                    message: `New ${item.type} request for ${item.title} (${diffDays} days) by ${renter.name || "a user"}`
                 }
             });
 
