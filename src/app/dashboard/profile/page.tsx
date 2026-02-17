@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import db from "@/lib/db";
+
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { User, Settings } from "lucide-react";
@@ -33,33 +33,7 @@ export default async function ProfilePage() {
 
     const { user } = session;
 
-    // Fetch User's Data with Transactions
-    const userData = await db.user.findUnique({
-        where: { id: user.id },
-        include: {
-            sentTransactions: {
-                orderBy: { createdAt: "desc" },
-                take: 5,
-                include: { item: true, toUser: { select: { name: true } } }
-            },
-            receivedTransactions: {
-                orderBy: { createdAt: "desc" },
-                take: 5,
-                include: { item: true, fromUser: { select: { name: true } } }
-            }
-        }
-    });
 
-    // Merge and sort transactions (Logic from transactions page)
-    const recentTransactions = userData ? [
-        ...userData.sentTransactions
-            .filter((t: any) => t.amount < 0)
-            .map((t: any) => ({ ...t, direction: 'out', amount: Math.abs(t.amount) })),
-        
-        ...userData.receivedTransactions
-            .filter((t: any) => t.amount > 0)
-            .map((t: any) => ({ ...t, direction: 'in' }))
-    ].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3) : [];
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 pb-10">
@@ -97,27 +71,7 @@ export default async function ProfilePage() {
                 </div>
             </div>
 
-            {/* Recent Transactions Preview */}
-            {recentTransactions.length > 0 && (
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-xl font-bold">Recent Transactions</h3>
-                    </div>
-                    <div className="grid gap-3">
-                        {recentTransactions.map((t) => (
-                            <div key={t.id} className="flex items-center justify-between p-4 border rounded-lg bg-card">
-                                <div>
-                                    <p className="font-medium text-sm">{t.item ? t.item.title : "System Transfer"}</p>
-                                    <p className="text-xs text-muted-foreground">{new Date(t.createdAt).toLocaleDateString()}</p>
-                                </div>
-                                <span className={`font-bold ${t.direction === 'in' ? 'text-green-600' : 'text-red-600'}`}>
-                                    {t.direction === 'in' ? '+' : '-'}₹{t.amount}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+
         </div>
     );
 }

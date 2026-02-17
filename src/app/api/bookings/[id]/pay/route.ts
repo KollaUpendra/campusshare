@@ -72,10 +72,20 @@ export async function POST(
                 data: { coins: { decrement: cost } }
             });
 
-            // 2. Add to Owner
+            // Calculate Service Charge
+            const settings = await tx.systemSettings.findFirst();
+            const isSell = item.type === 'Sell';
+            const serviceChargePercent = isSell 
+                ? (settings?.sellServiceChargePercent || 0) 
+                : (settings?.rentServiceChargePercent || 0);
+            
+            const serviceCharge = (cost * serviceChargePercent) / 100;
+            const ownerPayout = cost - serviceCharge;
+
+            // 2. Add to Owner (minus service charge)
             const updatedOwner = await tx.user.update({
                 where: { id: item.ownerId },
-                data: { coins: { increment: cost } }
+                data: { coins: { increment: ownerPayout } }
             });
 
             // 3. Create Transaction Records
@@ -89,6 +99,11 @@ export async function POST(
                     itemId: item.id,
                     referenceId: bookingId,
                     balanceAfter: updatedRenter.coins,
+                    platformFee: 0, // Fee is deducted from Owner's side only
+                    // status: "COMPLETED"
+                    // Wait, fee is deducted from owner. So transaction 1 (debit buyer) has 0 fee? 
+                    // Transaction 2 (credit owner) has fee?
+                    // Let's attach fee to the credit transaction since that's where deduction happens.
                     status: "COMPLETED"
                 }
             });
@@ -103,6 +118,7 @@ export async function POST(
                     itemId: item.id,
                     referenceId: bookingId,
                     balanceAfter: updatedOwner.coins,
+                    platformFee: serviceCharge,
                     status: "COMPLETED"
                 }
             });
@@ -144,7 +160,7 @@ export async function POST(
             await tx.notification.create({
                 data: {
                     userId: item.ownerId,
-                    message: `Payment received for ${item.title}! ${cost} coins added.`
+                    message: `Payment received for ${item.title}! ${ownerPayout.toFixed(2)} coins added (after ${serviceChargePercent}% fee).`
                 }
             });
 

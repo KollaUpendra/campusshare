@@ -53,6 +53,7 @@ export const viewport: Viewport = {
  * @returns {JSX.Element} The root html structure.
  */
 import DevToolsHider from "@/components/layout/DevToolsHider";
+import { Toaster } from "@/components/ui/toaster";
 
 export default function RootLayout({
   children,
@@ -86,6 +87,7 @@ export default function RootLayout({
               <p className="mt-2">© {new Date().getFullYear()} CampusShare</p>
             </footer>
           </div>
+          <Toaster />
         </Providers>
       </body>
     </html>
