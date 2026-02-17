@@ -18,7 +18,7 @@ import { authOptions } from "@/lib/auth";
 import db from "@/lib/db";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { User, LogOut, Settings } from "lucide-react";
+import { User, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 

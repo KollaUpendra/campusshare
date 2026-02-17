@@ -11,7 +11,7 @@ import Image from 'next/image';
 
 const CATEGORIES = ["Electronics", "Books", "Stationery", "Clothing", "Sports", "Other"];
 const CONDITIONS = ["New", "Like New", "Good", "Fair", "Poor"];
-const TYPES = ["Rent", "Sell"];
+
 
 const formSchema = z.object({
     title: z.string().min(3, "Title must be at least 3 characters"),
@@ -53,8 +53,8 @@ interface AddItemFormProps {
 export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFormProps) {
     // Initialize images from legacy 'image' or new 'images' array
     const [imageUrls, setImageUrls] = useState<string[]>(
-        initialData?.images && initialData.images.length > 0 
-            ? initialData.images 
+        initialData?.images && initialData.images.length > 0
+            ? initialData.images
             : (initialData?.image ? [initialData.image] : [])
     );
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -219,8 +219,8 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
                         type="button"
                         onClick={() => setValue("type", "Sell")}
                         className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${listingType === "Sell"
-                                ? "bg-primary text-primary-foreground shadow-sm"
-                                : "text-muted-foreground hover:text-foreground"
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
                             }`}
                     >
                         Sell
@@ -229,8 +229,8 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
                         type="button"
                         onClick={() => setValue("type", "Rent")}
                         className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${listingType === "Rent"
-                                ? "bg-primary text-primary-foreground shadow-sm"
-                                : "text-muted-foreground hover:text-foreground"
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
                             }`}
                     >
                         Rent

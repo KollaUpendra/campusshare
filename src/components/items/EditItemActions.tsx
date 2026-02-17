@@ -33,7 +33,7 @@ export default function EditItemActions({ itemId }: { itemId: string }) {
 
             router.push("/");
             router.refresh();
-        } catch (error) {
+        } catch {
             alert("Failed to delete item");
         } finally {
             setIsDeleting(false);

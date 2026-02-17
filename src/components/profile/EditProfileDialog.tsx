@@ -50,7 +50,7 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
 
             setOpen(false);
             router.refresh();
-        } catch (error) {
+        } catch {
             alert("Something went wrong");
         } finally {
             setIsLoading(false);

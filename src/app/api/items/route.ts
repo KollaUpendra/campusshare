@@ -40,7 +40,7 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { title, description, price, availability, image, images, category, condition, type, rentCoins, date, timeSlot, rentalDuration, availableFrom, availableUntil } = body;
+        const { title, description, price, availability, images, category, condition, type, rentCoins, date, timeSlot, rentalDuration, availableFrom, availableUntil } = body;
 
         if (!title || !price || !availability || !Array.isArray(availability)) {
             return new NextResponse("Missing required fields", { status: 400 });
@@ -160,7 +160,6 @@ export async function GET(req: Request) {
         const now = new Date();
         const validItems = items.filter(item => {
             if (item.date) {
-                const itemDate = new Date(item.date);
                 // Check if date has passed (simple check, creating a date object at 00:00)
                 // If itemDate < today (ignoring time), it's expired.
                 // For simplicity, we compare ISO strings

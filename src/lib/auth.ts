@@ -137,7 +137,7 @@ export const authOptions: NextAuthOptions = {
          * @param {object} user - The user object (only available on initial sign-in).
          * @returns {Promise<object>} The modified token.
          */
-        async jwt({ token, user, trigger, session }) {
+        async jwt({ token, user }) {
             try {
                 if (user) {
                     token.id = user.id;

@@ -44,7 +44,6 @@ export async function POST(
         }
 
         const item = booking.item;
-        const rentCost = (item as any).rentCoins || 0;
         const renter = booking.borrower;
 
         const body = await req.json().catch(() => ({}));
@@ -55,7 +54,7 @@ export async function POST(
             // 1. Update Booking Status -> ACCEPTED & Save Pickup Loc
             const updatedBooking = await tx.booking.update({
                 where: { id: bookingId },
-                data: { 
+                data: {
                     status: "ACCEPTED",
                     pickupLocation: pickupLocation || null
                 } as any

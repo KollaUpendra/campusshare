@@ -30,14 +30,14 @@ interface BookingRequestButtonProps {
     currentRequest?: any; // Booking object
 }
 
-export default function BookingRequestButton({ 
-    itemId, 
-    price, 
-    availableDays, 
+export default function BookingRequestButton({
+    itemId,
+    price,
+    availableDays,
     availableFrom,
     availableUntil,
-    type = "Rent", 
-    currentRequest 
+    type = "Rent",
+    currentRequest
 }: BookingRequestButtonProps) {
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
@@ -55,14 +55,12 @@ export default function BookingRequestButton({
         return `${year}-${month}-${day}`;
     };
 
-    const isDateDisabled = (d: Date) => {
-        return false; // Allow any date logic for now, handled by API mostly
-    };
+
 
     const handlePay = async () => {
         let confirmMsg = `Confirm payment of ${price} coins?`;
         if (currentRequest?.totalPrice) {
-             confirmMsg = `Confirm payment of ${currentRequest.totalPrice} coins?`;
+            confirmMsg = `Confirm payment of ${currentRequest.totalPrice} coins?`;
         }
 
         if (!confirm(confirmMsg)) return;
@@ -102,9 +100,9 @@ export default function BookingRequestButton({
                 body.endDate = end || start;
                 body.date = start; // Legacy fallback
             } else if (type === "Sell") {
-                 const today = new Date().toISOString().split("T")[0];
-                 body.date = today;
-                 body.startDate = today;
+                const today = new Date().toISOString().split("T")[0];
+                body.date = today;
+                body.startDate = today;
             }
 
             const res = await fetch("/api/bookings", {
@@ -129,8 +127,8 @@ export default function BookingRequestButton({
     };
 
     // Calculate total price preview
-    const duration = startDate && endDate 
-        ? Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1 
+    const duration = startDate && endDate
+        ? Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
         : 1;
     const totalPrice = price * (duration > 0 ? duration : 1);
 
@@ -139,7 +137,7 @@ export default function BookingRequestButton({
 
     if (currentRequest) {
         if (currentRequest.status === "PENDING" || currentRequest.status === "pending") {
-             return (
+            return (
                 <Button className="w-full" size="lg" disabled>
                     <Loader2 className="mr-2 h-4 w-4" />
                     Request Pending
@@ -147,8 +145,8 @@ export default function BookingRequestButton({
             );
         }
         if (currentRequest.status === "ACCEPTED" || currentRequest.status === "accepted") {
-             const payAmount = currentRequest.totalPrice || price;
-             return (
+            const payAmount = currentRequest.totalPrice || price;
+            return (
                 <>
                     <Button className="w-full bg-green-600 hover:bg-green-700 text-white" size="lg" onClick={handlePay} disabled={isLoading}>
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -200,7 +198,7 @@ export default function BookingRequestButton({
                             ) : (
                                 <p>Days: <span className="font-medium text-foreground">Every Day</span></p>
                             )}
-                            
+
                             {(availableFrom || availableUntil) && (
                                 <p className="text-xs mt-1">
                                     Range: {availableFrom ? new Date(availableFrom).toLocaleDateString() : 'Now'} - {availableUntil ? new Date(availableUntil).toLocaleDateString() : 'Indefinite'}
@@ -250,10 +248,10 @@ export default function BookingRequestButton({
                     </div>
 
                     {(startDate && endDate) && (
-                         <div className="bg-muted p-2 rounded-md text-sm text-center">
+                        <div className="bg-muted p-2 rounded-md text-sm text-center">
                             <p className="font-medium">Total: ₹{totalPrice}</p>
                             <p className="text-xs text-muted-foreground">For {duration} day{(duration > 1 ? 's' : '')}</p>
-                         </div>
+                        </div>
                     )}
 
                     <Button

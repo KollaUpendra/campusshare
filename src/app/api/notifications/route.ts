@@ -23,7 +23,7 @@ import { authOptions } from "@/lib/auth";
  * @param {Request} req - The HTTP request object.
  * @returns {NextResponse} JSON list of notifications.
  */
-export async function GET(req: Request) {
+export async function GET() {
     try {
         const session = await getServerSession(authOptions);
         if (!session || !session.user) {

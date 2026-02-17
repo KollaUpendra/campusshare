@@ -4,8 +4,7 @@ import db from "@/lib/db";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import { User, Coins, Phone, FileText } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -22,8 +21,8 @@ export default async function ProfilePage() {
         where: { id: session.user.id },
         include: {
             items: {
-                 where: { status: { not: "deleted" } }, // Assuming we don't hard delete
-                 orderBy: { createdAt: "desc" }
+                where: { status: { not: "deleted" } }, // Assuming we don't hard delete
+                orderBy: { createdAt: "desc" }
             },
             sentTransactions: {
                 orderBy: { createdAt: "desc" },
@@ -31,9 +30,9 @@ export default async function ProfilePage() {
                 include: { item: true, toUser: true }
             },
             receivedTransactions: {
-                 orderBy: { createdAt: "desc" },
-                 take: 10,
-                 include: { item: true, fromUser: true }
+                orderBy: { createdAt: "desc" },
+                take: 10,
+                include: { item: true, fromUser: true }
             }
         } as any
     });
@@ -67,7 +66,7 @@ export default async function ProfilePage() {
                         </div>
                     )}
                 </div>
-                
+
                 <div className="flex-1 text-center md:text-left space-y-2">
                     <h1 className="text-2xl font-bold">{user.name}</h1>
                     <p className="text-muted-foreground">{user.email}</p>
@@ -78,7 +77,7 @@ export default async function ProfilePage() {
                                 <span>{user.phoneNumber}</span>
                             </div>
                         )}
-                         {user.bio && (
+                        {user.bio && (
                             <div className="flex items-center gap-1">
                                 <FileText className="h-4 w-4" />
                                 <span>{user.bio}</span>
@@ -95,7 +94,7 @@ export default async function ProfilePage() {
                     <p className="text-xs text-muted-foreground">Available Balance</p>
                 </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* My Listings */}
                 <div className="space-y-4">
@@ -116,19 +115,19 @@ export default async function ProfilePage() {
                                     {user.items.map((item: any) => (
                                         <li key={item.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition">
                                             <div className="flex items-center gap-3">
-                                                 {item.image && (
+                                                {item.image && (
                                                     <div className="relative h-10 w-10 rounded overflow-hidden bg-muted">
                                                         <Image src={item.image} alt={item.title} fill className="object-cover" />
                                                     </div>
-                                                 )}
-                                                 <div>
-                                                     <p className="font-medium">{item.title}</p>
-                                                     <p className="text-xs text-muted-foreground">{item.status}</p>
-                                                 </div>
+                                                )}
+                                                <div>
+                                                    <p className="font-medium">{item.title}</p>
+                                                    <p className="text-xs text-muted-foreground">{item.status}</p>
+                                                </div>
                                             </div>
                                             <div className="text-right">
-                                                 <p className="font-bold">{item.price}</p>
-                                                 <Badge variant="secondary" className="text-[10px]">{item.type}</Badge>
+                                                <p className="font-bold">{item.price}</p>
+                                                <Badge variant="secondary" className="text-[10px]">{item.type}</Badge>
                                             </div>
                                         </li>
                                     ))}
@@ -143,7 +142,7 @@ export default async function ProfilePage() {
                     <h2 className="text-xl font-bold">Recent Transactions</h2>
                     <Card>
                         <CardContent className="p-0">
-                             {transactions.length === 0 ? (
+                            {transactions.length === 0 ? (
                                 <div className="p-6 text-center text-muted-foreground">
                                     No transaction history.
                                 </div>
@@ -158,7 +157,7 @@ export default async function ProfilePage() {
                                                 <p className="text-xs text-muted-foreground">
                                                     {t.item ? t.item.title : "System Transfer"}
                                                 </p>
-                                                 <p className="text-[10px] text-muted-foreground">
+                                                <p className="text-[10px] text-muted-foreground">
                                                     {new Date(t.createdAt).toLocaleDateString()}
                                                 </p>
                                             </div>
@@ -168,7 +167,7 @@ export default async function ProfilePage() {
                                         </li>
                                     ))}
                                 </ul>
-                             )}
+                            )}
                         </CardContent>
                     </Card>
                 </div>

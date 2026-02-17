@@ -1,6 +1,6 @@
 import db from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+
 import BlockUserButton from "@/components/admin/BlockUserButton"; // We will create this
 
 export const dynamic = "force-dynamic";

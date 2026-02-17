@@ -20,12 +20,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,7 +50,7 @@ type Booking = {
 };
 
 export default function BookingsPage() {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<"outgoing" | "incoming">("outgoing");
     const [bookings, setBookings] = useState<Booking[]>([]);
@@ -60,8 +60,6 @@ export default function BookingsPage() {
     const [activeBookingId, setActiveBookingId] = useState<string | null>(null);
     const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
     const [paymentAmount, setPaymentAmount] = useState(0);
-    const [successDialogOpen, setSuccessDialogOpen] = useState(false);
-    const [successMessage, setSuccessMessage] = useState("");
 
     useEffect(() => {
         if (status === "unauthenticated") {
@@ -112,15 +110,16 @@ export default function BookingsPage() {
         if (!activeBookingId) return;
         try {
             const res = await fetch(`/api/bookings/${activeBookingId}/pay`, { method: "POST" });
-            if(!res.ok) throw new Error(await res.text());
-            
+            if (!res.ok) throw new Error(await res.text());
+
             // Success
             setPaymentDialogOpen(false);
             fetchBookings(); // Refresh list
             router.refresh();
-            setSuccessMessage("Payment Successful!");
-            setSuccessDialogOpen(true);
-        } catch(e) {
+            fetchBookings(); // Refresh list
+            router.refresh();
+            alert("Payment Successful!");
+        } catch (e) {
             alert(e instanceof Error ? e.message : "Payment failed");
         }
     };
@@ -129,7 +128,7 @@ export default function BookingsPage() {
         try {
             const endpoint = action === "accepted" ? "accept" : "reject";
             const body = action === "accepted" ? { pickupLocation: location } : {};
-            
+
             const res = await fetch(`/api/bookings/${bookingId}/${endpoint}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -236,19 +235,19 @@ export default function BookingsPage() {
                                 )}
 
                                 {activeTab === "outgoing" && (booking.status === "accepted" || booking.status === "ACCEPTED") && (
-                                     <div className="mt-4">
-                                         <Button 
-                                            className="w-full bg-green-600 hover:bg-green-700" 
+                                    <div className="mt-4">
+                                        <Button
+                                            className="w-full bg-green-600 hover:bg-green-700"
                                             size="sm"
                                             onClick={() => {
                                                 setActiveBookingId(booking.id);
                                                 setPaymentAmount(booking.item.price);
                                                 setPaymentDialogOpen(true);
                                             }}
-                                         >
+                                        >
                                             Pay Now (₹{booking.item.price})
-                                         </Button>
-                                     </div>
+                                        </Button>
+                                    </div>
                                 )}
                             </CardContent>
                         </Card>
