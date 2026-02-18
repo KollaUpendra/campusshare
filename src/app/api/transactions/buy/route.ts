@@ -60,10 +60,16 @@ export async function POST(req: Request) {
                 data: { coins: { decrement: item.price } }
             });
 
-            // Credit Owner
+            // Calculate Service Charge
+            const settings = await tx.systemSettings.findFirst();
+            const serviceChargePercent = settings?.sellServiceChargePercent || 0;
+            const serviceCharge = (item.price * serviceChargePercent) / 100;
+            const sellerPayout = item.price - serviceCharge;
+
+            // Credit Owner (minus service charge)
             await tx.user.update({
                 where: { id: item.ownerId },
-                data: { coins: { increment: item.price } }
+                data: { coins: { increment: sellerPayout } }
             });
 
             // 3. Mark Item as Sold
@@ -81,6 +87,7 @@ export async function POST(req: Request) {
                     fromUserId: buyer.id,
                     toUserId: item.ownerId,
                     itemId: item.id,
+                    platformFee: serviceCharge,
                 }
             });
 

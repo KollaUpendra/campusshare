@@ -13,7 +13,7 @@ export default async function AdminUsersPage() {
     return (
         <div className="space-y-6">
             <h1 className="text-2xl font-bold">User Management</h1>
-            <div className="border rounded-lg bg-card overflow-hidden">
+            <div className="border rounded-lg bg-card overflow-x-auto">
                 <table className="w-full text-sm text-left">
                     <thead className="bg-muted text-muted-foreground">
                         <tr>

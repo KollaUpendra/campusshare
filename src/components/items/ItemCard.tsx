@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Heart } from "lucide-react";
+import { User } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
@@ -28,33 +28,10 @@ interface ItemCardProps {
     showEditButton?: boolean;
 }
 
-export default function ItemCard({ item, isWishlisted = false, showEditButton = false }: ItemCardProps) {
-    const [wishlisted, setWishlisted] = useState(isWishlisted);
+export default function ItemCard({ item, showEditButton = false }: ItemCardProps) {
     const { data: session } = useSession();
 
-    const toggleWishlist = async (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
 
-        if (!session) {
-            alert("Please sign in to add to wishlist");
-            return;
-        }
-
-        const newState = !wishlisted;
-        setWishlisted(newState); // Optimistic update
-
-        try {
-            await fetch("/api/wishlist", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ itemId: item.id }),
-            });
-        } catch (error) {
-            console.error("Failed to toggle wishlist", error);
-            setWishlisted(!newState); // Revert on error
-        }
-    };
 
     return (
         <Card className="overflow-hidden flex flex-col h-full group">
@@ -70,15 +47,6 @@ export default function ItemCard({ item, isWishlisted = false, showEditButton = 
                     <div className="flex items-center justify-center h-full text-muted-foreground">
                         <span className="text-xs">No Image</span>
                     </div>
-                )}
-
-                {!showEditButton && (
-                    <button
-                        onClick={toggleWishlist}
-                        className="absolute top-2 right-2 p-2 rounded-full bg-background/80 hover:bg-background text-red-500 shadow-sm transition-colors"
-                    >
-                        <Heart className="h-4 w-4" fill={wishlisted ? "currentColor" : "none"} />
-                    </button>
                 )}
             </div>
             <CardHeader className="p-4 pb-2">

@@ -14,7 +14,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, PlusCircle, CalendarCheck, User, Package } from "lucide-react"
+import { Home, PlusCircle, CalendarCheck, User, Package, Settings, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 /**
@@ -24,7 +24,38 @@ import { cn } from "@/lib/utils"
 export default function BottomNav() {
     const pathname = usePathname()
 
-    const navItems = [
+    // Admin Navigation Items
+    const adminNavItems = [
+        {
+            label: "Dashboard",
+            href: "/admin",
+            icon: Home,
+        },
+        {
+            label: "Users",
+            href: "/admin/users",
+            icon: User,
+        },
+        {
+            label: "Items",
+            href: "/admin/items", // Using Package icon for items
+            icon: Package,
+        },
+
+        {
+            label: "Settings",
+            href: "/admin/settings",
+            icon: Settings,
+        },
+        {
+            label: "Incomplete",
+            href: "/admin/transactions/incomplete",
+            icon: AlertCircle, 
+        },
+    ];
+
+    const isAdmin = pathname?.startsWith("/admin");
+    const itemsToShow = isAdmin ? adminNavItems : [
         {
             label: "Home",
             href: "/",
@@ -51,12 +82,12 @@ export default function BottomNav() {
             href: "/dashboard/profile",
             icon: User,
         },
-    ]
+    ];
 
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background pb-safe">
             <div className="container flex h-16 items-center px-2 justify-around">
-                {navItems.map((item) => {
+                {itemsToShow.map((item) => {
                     const isActive = pathname === item.href
 
                     if (item.primary) {

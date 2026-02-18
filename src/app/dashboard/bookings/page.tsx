@@ -34,7 +34,9 @@ import { cn } from "@/lib/utils";
 
 type Booking = {
     id: string;
-    status: "pending" | "accepted" | "rejected" | "PENDING" | "ACCEPTED" | "REJECTED" | "COMPLETED";
+    status: "pending" | "accepted" | "rejected" | "PENDING" | "ACCEPTED" | "REJECTED" | "COMPLETED" | "RECEIVED" | "RETURNED" | "CLOSED" | "PENDING_OWNER_CONFIRMATION" | "PENDING_BORROWER_CONFIRMATION" | "SUCCESSFUL";
+    isReturned?: boolean;
+    isReceived?: boolean;
     date: string;
     item: {
         id: string;
@@ -59,6 +61,9 @@ export default function BookingsPage() {
     const [pickupLocation, setPickupLocation] = useState("");
     const [activeBookingId, setActiveBookingId] = useState<string | null>(null);
     const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+    const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+    const [statusConfirmOpen, setStatusConfirmOpen] = useState(false);
+    const [pendingStatusUpdate, setPendingStatusUpdate] = useState<{id: string, status: "RECEIVED" | "RETURNED"} | null>(null);
     const [paymentAmount, setPaymentAmount] = useState(0);
 
     useEffect(() => {
@@ -116,11 +121,52 @@ export default function BookingsPage() {
             setPaymentDialogOpen(false);
             fetchBookings(); // Refresh list
             router.refresh();
-            fetchBookings(); // Refresh list
-            router.refresh();
-            alert("Payment Successful!");
+            setSuccessDialogOpen(true);
         } catch (e) {
             alert(e instanceof Error ? e.message : "Payment failed");
+        }
+    };
+
+    const handleReturnFlow = async (bookingId: string, action: "conf_returned" | "conf_received") => {
+          try {
+            const res = await fetch(`/api/bookings/${bookingId}/status`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: "RETURN_FLOW", action })
+            });
+            if (!res.ok) throw new Error(await res.text());
+            
+            const updated = await res.json();
+            setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, ...updated } : b));
+            router.refresh();
+        } catch (e) {
+            alert(e instanceof Error ? e.message : "Update failed");
+        }
+    };
+
+    const handleStatusUpdate = async (bookingId: string, newStatus: "RECEIVED" | "RETURNED") => {
+        setPendingStatusUpdate({ id: bookingId, status: newStatus });
+        setStatusConfirmOpen(true);
+    };
+
+    const confirmStatusUpdate = async () => {
+        if (!pendingStatusUpdate) return;
+        const { id: bookingId, status: newStatus } = pendingStatusUpdate;
+
+        try {
+            const res = await fetch(`/api/bookings/${bookingId}/status`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: newStatus })
+            });
+            if (!res.ok) throw new Error(await res.text());
+            
+            setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus } : b));
+            router.refresh();
+            setStatusConfirmOpen(false);
+            setPendingStatusUpdate(null);
+        } catch (e) {
+            alert(e instanceof Error ? e.message : "Update failed");
         }
     };
 
@@ -189,10 +235,18 @@ export default function BookingsPage() {
                                     <CardTitle className="text-base truncate">{booking.item.title}</CardTitle>
                                 </Link>
                                 <Badge variant={
-                                    (booking.status === "accepted" || booking.status === "ACCEPTED") ? "default" :
-                                        (booking.status === "rejected" || booking.status === "REJECTED") ? "destructive" : "secondary"
-                                }>
-                                    {booking.status}
+                                    (booking.status === "SUCCESSFUL" || booking.status === "CLOSED") ? "default" : // Green for Success
+                                    (booking.status === "accepted" || booking.status === "ACCEPTED") ? "secondary" :
+                                    (booking.status === "rejected" || booking.status === "REJECTED") ? "destructive" : 
+                                    (booking.status === "PENDING_OWNER_CONFIRMATION" || booking.status === "PENDING_BORROWER_CONFIRMATION") ? "destructive" : "outline" // Red for Pending Actions
+                                } className={cn(
+                                    (booking.status === "SUCCESSFUL" || booking.status === "CLOSED") && "bg-green-600 hover:bg-green-700",
+                                    (booking.status === "PENDING_OWNER_CONFIRMATION" || booking.status === "PENDING_BORROWER_CONFIRMATION") && "bg-red-500 hover:bg-red-600"
+                                )}>
+                                    {booking.status === "SUCCESSFUL" ? "SUCCESSFUL" : 
+                                     booking.status === "PENDING_OWNER_CONFIRMATION" ? "PENDING OWNER" :
+                                     booking.status === "PENDING_BORROWER_CONFIRMATION" ? "PENDING BORROWER" :
+                                     booking.status}
                                 </Badge>
                             </CardHeader>
                             <CardContent className="p-4 pt-2 text-sm">
@@ -204,6 +258,24 @@ export default function BookingsPage() {
                                     <span className="text-muted-foreground">Amount:</span>
                                     <span className="font-medium">₹{booking.item.price}</span>
                                 </div>
+
+                                {/* Status Progress Indicators for RECEIVED state */}
+                                {booking.status === "RECEIVED" && (
+                                    <div className="my-3 p-2 bg-muted/50 rounded text-xs space-y-1">
+                                         <div className="flex justify-between">
+                                            <span>Borrower Returned:</span>
+                                            <span className={booking.isReturned ? "text-green-600 font-bold" : "text-amber-600"}>
+                                                {booking.isReturned ? "✔ Confirmed" : "⏳ Pending"}
+                                            </span>
+                                         </div>
+                                         <div className="flex justify-between">
+                                            <span>Owner Received:</span>
+                                            <span className={booking.isReceived ? "text-green-600 font-bold" : "text-amber-600"}>
+                                                {booking.isReceived ? "✔ Confirmed" : "⏳ Pending"}
+                                            </span>
+                                         </div>
+                                    </div>
+                                )}
 
                                 {activeTab === "incoming" && booking.borrower && (
                                     <div className="flex items-center gap-2 mt-3 pt-3 border-t">
@@ -246,6 +318,42 @@ export default function BookingsPage() {
                                             }}
                                         >
                                             Pay Now (₹{booking.item.price})
+                                        </Button>
+                                    </div>
+                                )}
+
+                                {/* Mutual Confirmation Actions */}
+                                {(booking.status === "RECEIVED" || booking.status === "PENDING_BORROWER_CONFIRMATION" || booking.status === "PENDING_OWNER_CONFIRMATION") && (
+                                    <div className="mt-4 space-y-2">
+                                        {activeTab === "incoming" && !booking.isReceived && (
+                                            <Button 
+                                                className="w-full" 
+                                                onClick={() => handleReturnFlow(booking.id, "conf_received")}
+                                            >
+                                                Confirm Item Received
+                                            </Button>
+                                        )}
+                                        {activeTab === "outgoing" && !booking.isReturned && (
+                                            <Button 
+                                                className="w-full" 
+                                                onClick={() => handleReturnFlow(booking.id, "conf_returned")}
+                                            >
+                                                Confirm Item Returned
+                                            </Button>
+                                        )}
+                                        {((activeTab === "incoming" && booking.isReceived) || (activeTab === "outgoing" && booking.isReturned)) && (
+                                            <p className="text-center text-xs text-muted-foreground">Waiting for other party...</p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {activeTab === "outgoing" && booking.status === "COMPLETED" && (
+                                    <div className="mt-4">
+                                        <Button 
+                                            className="w-full" 
+                                            onClick={() => handleStatusUpdate(booking.id, "RECEIVED")}
+                                        >
+                                            Mark as Received
                                         </Button>
                                     </div>
                                 )}
@@ -297,6 +405,42 @@ export default function BookingsPage() {
                         <Button className="bg-green-600 hover:bg-green-700" onClick={confirmPayment}>
                             Confirm Payment (₹{paymentAmount})
                         </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Payment Success Dialog */}
+            <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-4">
+                            <Check className="h-6 w-6 text-green-600" />
+                        </div>
+                        <DialogTitle className="text-center">Payment Successful!</DialogTitle>
+                        <DialogDescription className="text-center text-zinc-500">
+                             The payment has been processed successfully.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="sm:justify-center">
+                        <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => setSuccessDialogOpen(false)}>
+                            OK
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Status Update Confirmation Dialog */}
+            <Dialog open={statusConfirmOpen} onOpenChange={setStatusConfirmOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Confirm Action</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to mark this item as <strong>{pendingStatusUpdate?.status}</strong>?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setStatusConfirmOpen(false)}>Cancel</Button>
+                        <Button onClick={confirmStatusUpdate}>Confirm</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

@@ -10,7 +10,7 @@ export const createTestUser = async (role: string = 'student') => {
             name: 'Test User',
             role,
             image: 'https://github.com/shadcn.png',
-            emailVerified: new Date(),
+
         },
     });
 

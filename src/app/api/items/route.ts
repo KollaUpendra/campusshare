@@ -229,6 +229,9 @@ export async function PUT(req: Request) {
 
         const body = await req.json();
         const { id, title, description, price, image, images, category, condition, type, availability, status, rentalDuration, availableFrom, availableUntil } = body;
+        
+        console.log("[ITEMS_PUT] Request Body:", body);
+        console.log("[ITEMS_PUT] Price received:", price, "Type:", typeof price);
 
         if (!id) {
             return new NextResponse("Missing Item ID", { status: 400 });

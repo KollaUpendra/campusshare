@@ -60,23 +60,13 @@ async function getItems(query?: string, category?: string, type?: string) {
   }
 }
 
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ query?: string; category?: string; type?: string }> }) {
   const { query, category, type } = await searchParams;
   const items = await getItems(query, category, type);
 
-  const session = await getServerSession(authOptions);
-  const wishlistSet = new Set<string>();
 
-  if (session?.user?.id) {
-    const wishlist = await db.wishlist.findMany({
-      where: { userId: session.user.id },
-      select: { itemId: true }
-    });
-    wishlist.forEach(w => wishlistSet.add(w.itemId));
-  }
 
   const CATEGORIES = ["All", "Electronics", "Books", "Stationery", "Clothing", "Sports", "Other"];
   const TYPES = ["All", "Rent", "Sell"];
@@ -113,7 +103,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
               {TYPES.map(t => <option key={t} value={t}>{t === "All" ? "All Types" : t}</option>)}
             </select>
 
-            <Button type="submit">Filter</Button>
+            <Button type="submit" size="icon">
+              <Search className="h-4 w-4" />
+              <span className="sr-only">Search</span>
+            </Button>
           </div>
         </form>
       </section>
@@ -129,7 +122,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
             // If the user wants side-by-side on mobile too, we could use w-[calc(50%-0.5rem)].
             // Sticking to standard responsive behavior for now but using Flex as requested.
             <div key={item.id} className="w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.67rem)]">
-              <ItemCard item={item} isWishlisted={wishlistSet.has(item.id)} />
+              <ItemCard item={item} />
             </div>
           ))
         ) : (
