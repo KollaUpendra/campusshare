@@ -11,13 +11,18 @@ export async function PUT(req: Request) {
         }
 
         const body = await req.json();
-        const { bio, phoneNumber, image } = body;
+        const { name, bio, phoneNumber, image, year, branch, section, address } = body;
 
         await db.user.update({
             where: { id: session.user.id },
             data: {
+                name,
                 bio,
                 phoneNumber,
+                year,
+                branch,
+                section,
+                address,
                 // Only update image if provided (handled by separate upload logic usually, 
                 // but user might send Cloudinary URL here)
                 ...(image ? { image } : {})

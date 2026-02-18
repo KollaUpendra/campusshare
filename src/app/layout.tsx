@@ -54,6 +54,7 @@ export const viewport: Viewport = {
  */
 import DevToolsHider from "@/components/layout/DevToolsHider";
 import { Toaster } from "@/components/ui/toaster";
+import ProfileCompletionCheck from "@/components/profile/ProfileCompletionCheck";
 
 export default function RootLayout({
   children,
@@ -65,6 +66,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <DevToolsHider />
         <Providers>
+            <ProfileCompletionCheck />
           <div className="flex min-h-screen flex-col bg-muted/30">
             {/* Common Header across all pages */}
             <Header />

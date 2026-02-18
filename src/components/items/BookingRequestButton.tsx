@@ -92,6 +92,8 @@ export default function BookingRequestButton({
             return;
         }
 
+        // Profile check handled globally by ProfileCompletionCheck
+
         setIsLoading(true);
         try {
             const body: any = { itemId };

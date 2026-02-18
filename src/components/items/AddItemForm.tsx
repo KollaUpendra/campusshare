@@ -8,6 +8,7 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import Image from 'next/image';
+import { useSession } from "next-auth/react";
 
 const CATEGORIES = ["Electronics", "Books", "Stationery", "Clothing", "Sports", "Other"];
 const CONDITIONS = ["New", "Like New", "Good", "Fair", "Poor"];
@@ -90,7 +91,16 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
 
     const listingType = watch("type");
 
+    const { data: session } = useSession();
+
     const onSubmit = async (data: FormData) => {
+        if (!session) {
+            alert("Please sign in to post items");
+            return;
+        }
+        
+        // Profile check handled globally by ProfileCompletionCheck
+
         setIsSubmitting(true);
         try {
             const url = "/api/items";

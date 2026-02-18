@@ -53,7 +53,7 @@ export default async function TransactionsPage() {
         <div className="container mx-auto px-4 py-8 max-w-2xl">
             <div className="flex items-center gap-2 mb-6">
                 <Button variant="ghost" size="icon" asChild>
-                    <Link href="/dashboard/profile">
+                    <Link href="/profile">
                         <ArrowLeft className="h-5 w-5" />
                     </Link>
                 </Button>
