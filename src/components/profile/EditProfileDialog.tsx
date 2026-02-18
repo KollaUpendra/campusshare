@@ -13,25 +13,46 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Edit } from "lucide-react";
 import { CldUploadWidget } from "next-cloudinary";
 
-interface EditProfileDialogProps {
+export interface EditProfileDialogProps {
     user: {
         name: string | null;
         image: string | null;
         bio: string | null;
         phoneNumber: string | null;
+        year: string | null;
+        branch: string | null;
+        section: string | null;
+        address: string | null;
     };
+    forceOpen?: boolean;
 }
 
-export default function EditProfileDialog({ user }: EditProfileDialogProps) {
-    const [open, setOpen] = useState(false);
+import { useSession } from "next-auth/react";
+
+export default function EditProfileDialog({ user, forceOpen = false }: EditProfileDialogProps) {
+    const { update } = useSession();
+    const [open, setOpen] = useState(forceOpen);
+    
+    useEffect(() => {
+        if (forceOpen) {
+            setOpen(true);
+        }
+    }, [forceOpen]);
+
     const [isLoading, setIsLoading] = useState(false);
+    const [name, setName] = useState(user.name || "");
     const [bio, setBio] = useState(user.bio || "");
     const [phoneNumber, setPhoneNumber] = useState(user.phoneNumber || "");
+    const [year, setYear] = useState(user.year || "");
+    const [branch, setBranch] = useState(user.branch || "");
+    const [section, setSection] = useState(user.section || "");
+    const [address, setAddress] = useState(user.address || "");
+
     const [imageUrl, setImageUrl] = useState(user.image || "");
     const router = useRouter();
 
@@ -43,12 +64,26 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
             const res = await fetch("/api/user/profile", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ bio, phoneNumber, image: imageUrl }),
+                body: JSON.stringify({ 
+                    name,
+                    bio, 
+                    phoneNumber, 
+                    image: imageUrl,
+                    year,
+                    branch,
+                    section,
+                    address
+                }),
             });
 
             if (!res.ok) throw new Error("Failed to update profile");
 
-            setOpen(false);
+            // Refresh session data on client
+            await update();
+
+            if (!forceOpen) {
+                setOpen(false);
+            }
             router.refresh();
         } catch {
             alert("Something went wrong");
@@ -58,13 +93,18 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                    <Edit className="h-4 w-4" />
-                    Edit Profile
-                </Button>
-            </DialogTrigger>
+        <Dialog open={open} onOpenChange={(val) => {
+            if (forceOpen && !val) return;
+            setOpen(val);
+        }}>
+            {!forceOpen && (
+                <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                        <Edit className="h-4 w-4" />
+                        Edit Profile
+                    </Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>Edit Profile</DialogTitle>
@@ -105,6 +145,17 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
                         />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="name" className="text-right">
+                            Name
+                        </Label>
+                        <Input
+                            id="name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="col-span-3"
+                        />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="phone" className="text-right">
                             Phone
                         </Label>
@@ -114,6 +165,23 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
                             onChange={(e) => setPhoneNumber(e.target.value)}
                             className="col-span-3"
                         />
+                    </div>
+                    {/* New Fields */}
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="year" className="text-right">Year</Label>
+                        <Input id="year" value={year} onChange={(e) => setYear(e.target.value)} className="col-span-3" placeholder="e.g. 3rd Year" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="branch" className="text-right">Branch</Label>
+                        <Input id="branch" value={branch} onChange={(e) => setBranch(e.target.value)} className="col-span-3" placeholder="e.g. CSE" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="section" className="text-right">Section</Label>
+                        <Input id="section" value={section} onChange={(e) => setSection(e.target.value)} className="col-span-3" placeholder="e.g. A" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="address" className="text-right">Address</Label>
+                        <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} className="col-span-3" placeholder="Hostel/Room No." />
                     </div>
                     <DialogFooter>
                         <Button type="submit" disabled={isLoading}>

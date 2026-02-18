@@ -65,6 +65,10 @@ model User {
   coins         Float     @default(500.0)
   bio           String?
   phoneNumber   String?
+  year          String?   // e.g., "1st Year", "2nd Year"
+  branch        String?   // e.g., "CSE", "ECE"
+  section       String?   // e.g., "A", "B"
+  address       String?
   
   createdAt     DateTime  @default(now())
 

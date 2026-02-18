@@ -79,7 +79,7 @@ export default function BottomNav() {
         },
         {
             label: "Profile",
-            href: "/dashboard/profile",
+            href: "/profile",
             icon: User,
         },
     ];

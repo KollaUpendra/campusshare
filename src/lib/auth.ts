@@ -27,7 +27,7 @@ import type { Adapter } from "next-auth/adapters"
 import GoogleProvider from "next-auth/providers/google"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import db from "@/lib/db"
-import CredentialsProvider from "next-auth/providers/credentials"
+
 
 // ALLOWED_DOMAIN is read at runtime in the signIn callback below
 
@@ -71,33 +71,7 @@ export const authOptions: NextAuthOptions = {
             clientId: process.env.GOOGLE_CLIENT_ID!,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
         }),
-        /**
-         * Credentials Provider (Development/Test Only)
-         * Allows bypassing Google OAuth for E2E testing.
-         */
-        CredentialsProvider({
-            name: "Testing Credentials",
-            credentials: {
-                email: { label: "Email", type: "text" },
-                role: { label: "Role", type: "text" },
-                id: { label: "ID", type: "text" },
-            },
-            async authorize(credentials) {
-                // ONLY allow in development or test environment
-                if (process.env.NODE_ENV === "production") return null;
 
-                if (!credentials?.email || !credentials?.id) return null;
-
-                // Return a mock user object
-                return {
-                    id: credentials.id,
-                    email: credentials.email,
-                    name: "Test User",
-                    role: credentials.role || "student",
-                    image: "https://github.com/shadcn.png",
-                };
-            },
-        }),
     ],
     callbacks: {
         /**
@@ -108,10 +82,7 @@ export const authOptions: NextAuthOptions = {
          * @returns {Promise<boolean>} True if sign-in is allowed, false otherwise.
          */
         async signIn({ user, account }) {
-            // Allow Credentials Provider (Testing) to bypass domain check
-            if (account?.provider === "credentials") {
-                return true;
-            }
+
 
             // CHECK IF USER IS BLOCKED
             if (user.email) {
@@ -148,11 +119,24 @@ export const authOptions: NextAuthOptions = {
                 if (token.id) {
                     const dbUser = await db.user.findUnique({
                         where: { id: token.id as string },
-                        select: { role: true, coins: true },
+                        select: { 
+                            role: true, 
+                            coins: true,
+                            year: true,
+                            branch: true,
+                            section: true,
+                            address: true,
+                            phoneNumber: true,
+                         },
                     });
                     if (dbUser) {
                         token.role = dbUser.role;
                         token.coins = dbUser.coins;
+                        token.year = dbUser.year;
+                        token.branch = dbUser.branch;
+                        token.section = dbUser.section;
+                        token.address = dbUser.address;
+                        token.phoneNumber = dbUser.phoneNumber;
                     }
                 }
             } catch (error) {
@@ -166,12 +150,17 @@ export const authOptions: NextAuthOptions = {
                 session.user.id = token.id as string;
                 session.user.role = token.role as string;
                 (session.user as any).coins = token.coins as number;
+                (session.user as any).year = token.year;
+                (session.user as any).branch = token.branch;
+                (session.user as any).section = token.section;
+                (session.user as any).address = token.address;
+                (session.user as any).phoneNumber = token.phoneNumber;
             }
             return session;
         },
     },
-    // pages: {
-    //     signIn: '/api/auth/signin',
-    //     error: '/api/auth/error',
-    // },
+    pages: {
+        signIn: '/auth/signin',
+        // error: '/api/auth/error',
+    },
 }
