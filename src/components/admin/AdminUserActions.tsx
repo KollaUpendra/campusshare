@@ -5,6 +5,15 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ShieldCheck, ShieldOff, Ban, CheckCircle } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface AdminUserActionsProps {
     userId: string;
@@ -15,13 +24,12 @@ interface AdminUserActionsProps {
 
 export default function AdminUserActions({ userId, currentRole, isBlocked, isSelf }: AdminUserActionsProps) {
     const [loading, setLoading] = useState<string | null>(null);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const router = useRouter();
+    const { toast } = useToast();
 
     const handleAction = async (action: "toggleRole" | "toggleBlock") => {
-        if (action === "toggleBlock" && !isBlocked) {
-            if (!confirm("Are you sure you want to block this user? They will not be able to log in.")) return;
-        }
-
+        setIsConfirmOpen(false);
         setLoading(action);
         try {
             const res = await fetch("/api/admin/users", {
@@ -32,13 +40,25 @@ export default function AdminUserActions({ userId, currentRole, isBlocked, isSel
 
             if (!res.ok) {
                 const msg = await res.text();
-                alert(`Error: ${msg}`);
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: msg,
+                });
                 return;
             }
 
+            toast({
+                title: "Success",
+                description: "User updated successfully.",
+            });
             router.refresh();
         } catch {
-            alert("Network error");
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Network error",
+            });
         } finally {
             setLoading(null);
         }
@@ -68,7 +88,13 @@ export default function AdminUserActions({ userId, currentRole, isBlocked, isSel
             <Button
                 variant={isBlocked ? "default" : "destructive"}
                 size="sm"
-                onClick={() => handleAction("toggleBlock")}
+                onClick={() => {
+                    if (!isBlocked) {
+                        setIsConfirmOpen(true);
+                    } else {
+                        handleAction("toggleBlock");
+                    }
+                }}
                 disabled={loading !== null}
             >
                 {loading === "toggleBlock" ? (
@@ -79,6 +105,26 @@ export default function AdminUserActions({ userId, currentRole, isBlocked, isSel
                     <><Ban className="h-3 w-3 mr-1" /> Block</>
                 )}
             </Button>
+
+            <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Block User</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to block this user? They will not be able to log in to the platform.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsConfirmOpen(false)} disabled={loading !== null}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={() => handleAction("toggleBlock")} disabled={loading !== null}>
+                            {loading === "toggleBlock" && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                            Confirm Block
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Ban, CheckCircle } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,7 @@ export default function BlockUserButton({ userId, isBlocked }: BlockUserButtonPr
     const [isLoading, setIsLoading] = useState(false);
     const [open, setOpen] = useState(false);
     const router = useRouter();
+    const { toast } = useToast();
 
     const handleBlockAction = async () => {
         setIsLoading(true);
@@ -40,7 +42,11 @@ export default function BlockUserButton({ userId, isBlocked }: BlockUserButtonPr
             setOpen(false);
             router.refresh();
         } catch (error) {
-            alert("Error updating user");
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Error updating user",
+            });
         } finally {
             setIsLoading(false);
         }

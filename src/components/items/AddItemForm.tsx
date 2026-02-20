@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import Image from 'next/image';
 import { useSession } from "next-auth/react";
+import { useToast } from "@/components/ui/use-toast";
 
 const CATEGORIES = ["Electronics", "Books", "Stationery", "Clothing", "Sports", "Other"];
 const CONDITIONS = ["New", "Like New", "Good", "Fair", "Poor"];
@@ -60,6 +61,7 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
     );
     const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
+    const { toast } = useToast();
 
     const {
         register,
@@ -95,7 +97,11 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
 
     const onSubmit = async (data: FormData) => {
         if (!session) {
-            alert("Please sign in to post items");
+            toast({
+                variant: "destructive",
+                title: "Authentication Required",
+                description: "Please sign in to post items",
+            });
             return;
         }
         
@@ -137,7 +143,11 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
         } catch (error: unknown) {
             console.error(error);
             const message = error instanceof Error ? error.message : "Something went wrong";
-            alert(message);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: message,
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -148,7 +158,11 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
         if (!files || files.length === 0) return;
 
         if (imageUrls.length + files.length > 1) {
-            alert("You can only upload 1 image.");
+            toast({
+                variant: "destructive",
+                title: "Upload Limit",
+                description: "You can only upload 1 image.",
+            });
             return;
         }
 
@@ -194,7 +208,11 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
                     newUrls.push(data.secure_url);
                 } else {
                     console.error("Cloudinary upload failed", data);
-                    alert("Upload failed. Please try again. " + (data.error?.message || ""));
+                    toast({
+                        variant: "destructive",
+                        title: "Upload Failed",
+                        description: "Upload failed. Please try again. " + (data.error?.message || ""),
+                    });
                 }
             }
 
@@ -204,7 +222,11 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
 
         } catch (error) {
             console.error("Upload failed:", error);
-            alert("Image upload failed: " + (error instanceof Error ? error.message : "Unknown error"));
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Image upload failed: " + (error instanceof Error ? error.message : "Unknown error"),
+            });
         } finally {
             setIsSubmitting(false);
         }

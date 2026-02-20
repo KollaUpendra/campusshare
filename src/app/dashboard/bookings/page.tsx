@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Loader2, Check, X } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -63,8 +64,10 @@ export default function BookingsPage() {
     const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
     const [successDialogOpen, setSuccessDialogOpen] = useState(false);
     const [statusConfirmOpen, setStatusConfirmOpen] = useState(false);
+    const [rejectConfirmOpen, setRejectConfirmOpen] = useState(false);
     const [pendingStatusUpdate, setPendingStatusUpdate] = useState<{id: string, status: "RECEIVED" | "RETURNED"} | null>(null);
     const [paymentAmount, setPaymentAmount] = useState(0);
+    const { toast } = useToast();
 
     useEffect(() => {
         if (status === "unauthenticated") {
@@ -101,8 +104,8 @@ export default function BookingsPage() {
         }
 
         // Reject Logic
-        if (!confirm(`Are you sure you want to reject this request?`)) return;
-        await processBooking(bookingId, "rejected");
+        setActiveBookingId(bookingId);
+        setRejectConfirmOpen(true);
     };
 
     const confirmAccept = async () => {
@@ -123,7 +126,11 @@ export default function BookingsPage() {
             router.refresh();
             setSuccessDialogOpen(true);
         } catch (e) {
-            alert(e instanceof Error ? e.message : "Payment failed");
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: e instanceof Error ? e.message : "Payment failed",
+            });
         }
     };
 
@@ -140,7 +147,11 @@ export default function BookingsPage() {
             setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, ...updated } : b));
             router.refresh();
         } catch (e) {
-            alert(e instanceof Error ? e.message : "Update failed");
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: e instanceof Error ? e.message : "Update failed",
+            });
         }
     };
 
@@ -166,7 +177,11 @@ export default function BookingsPage() {
             setStatusConfirmOpen(false);
             setPendingStatusUpdate(null);
         } catch (e) {
-            alert(e instanceof Error ? e.message : "Update failed");
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: e instanceof Error ? e.message : "Update failed",
+            });
         }
     };
 
@@ -188,8 +203,13 @@ export default function BookingsPage() {
 
             const newStatus = action === "accepted" ? "ACCEPTED" : "REJECTED";
             setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus as any } : b));
+            if (action === "rejected") setRejectConfirmOpen(false);
         } catch (error) {
-            alert(`Failed to ${action}: ${error instanceof Error ? error.message : "Unknown error"}`);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: `Failed to ${action}: ${error instanceof Error ? error.message : "Unknown error"}`,
+            });
         }
     };
 
@@ -441,6 +461,24 @@ export default function BookingsPage() {
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setStatusConfirmOpen(false)}>Cancel</Button>
                         <Button onClick={confirmStatusUpdate}>Confirm</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Reject Confirmation Dialog */}
+            <Dialog open={rejectConfirmOpen} onOpenChange={setRejectConfirmOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Reject Request</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to reject this request?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setRejectConfirmOpen(false)}>Cancel</Button>
+                        <Button variant="destructive" onClick={() => activeBookingId && processBooking(activeBookingId, "rejected")}>
+                            Confirm Reject
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

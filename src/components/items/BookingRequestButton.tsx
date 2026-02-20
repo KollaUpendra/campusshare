@@ -19,6 +19,15 @@ import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface BookingRequestButtonProps {
     itemId: string;
@@ -43,8 +52,10 @@ export default function BookingRequestButton({
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const router = useRouter();
     const { data: session } = useSession();
+    const { toast } = useToast();
 
     // Helper to get local date string YYYY-MM-DD
     const getTodayString = () => {
@@ -58,13 +69,7 @@ export default function BookingRequestButton({
 
 
     const handlePay = async () => {
-        let confirmMsg = `Confirm payment of ${price} coins?`;
-        if (currentRequest?.totalPrice) {
-            confirmMsg = `Confirm payment of ${currentRequest.totalPrice} coins?`;
-        }
-
-        if (!confirm(confirmMsg)) return;
-
+        setIsConfirmOpen(false);
         setIsLoading(true);
         try {
             const res = await fetch(`/api/bookings/${currentRequest.id}/pay`, {
@@ -76,11 +81,18 @@ export default function BookingRequestButton({
                 throw new Error(msg);
             }
 
-            alert("Payment successful!");
+            toast({
+                title: "Success",
+                description: "Payment successful!",
+            });
             router.push("/transactions");
             router.refresh();
         } catch (error: unknown) {
-            alert(error instanceof Error ? error.message : "Payment failed");
+            toast({
+                variant: "destructive",
+                title: "Payment Error",
+                description: error instanceof Error ? error.message : "Payment failed",
+            });
         } finally {
             setIsLoading(false);
         }
@@ -88,7 +100,11 @@ export default function BookingRequestButton({
 
     const handleRequest = async (start?: string, end?: string) => {
         if (!session) {
-            alert("Please sign in to book items");
+            toast({
+                variant: "destructive",
+                title: "Authentication Required",
+                description: "Please sign in to book items",
+            });
             return;
         }
 
@@ -118,11 +134,18 @@ export default function BookingRequestButton({
                 throw new Error(msg);
             }
 
-            alert("Request sent successfully! Wait for owner approval.");
+            toast({
+                title: "Success",
+                description: "Request sent successfully! Wait for owner approval.",
+            });
             setIsOpen(false);
             router.refresh();
         } catch (error: unknown) {
-            alert(error instanceof Error ? error.message : "Failed to send request");
+            toast({
+                variant: "destructive",
+                title: "Request Error",
+                description: error instanceof Error ? error.message : "Failed to send request",
+            });
         } finally {
             setIsLoading(false);
         }
@@ -150,10 +173,31 @@ export default function BookingRequestButton({
             const payAmount = currentRequest.totalPrice || price;
             return (
                 <>
-                    <Button className="w-full bg-green-600 hover:bg-green-700 text-white" size="lg" onClick={handlePay} disabled={isLoading}>
+                    <Button className="w-full bg-green-600 hover:bg-green-700 text-white" size="lg" onClick={() => setIsConfirmOpen(true)} disabled={isLoading}>
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         Pay Now (₹{payAmount})
                     </Button>
+
+                    <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Confirm Payment</DialogTitle>
+                                <DialogDescription>
+                                    Are you sure you want to pay <strong>₹{payAmount}</strong> for this item?
+                                </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsConfirmOpen(false)} disabled={isLoading}>
+                                    Cancel
+                                </Button>
+                                <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={handlePay} disabled={isLoading}>
+                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Confirm Payment
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+
                     {currentRequest.pickupLocation && (
                         <p className="text-xs text-center text-muted-foreground mt-2">
                             Pickup: <span className="font-medium text-foreground">{currentRequest.pickupLocation}</span>

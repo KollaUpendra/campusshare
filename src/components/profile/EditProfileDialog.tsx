@@ -17,6 +17,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Edit } from "lucide-react";
 import { CldUploadWidget } from "next-cloudinary";
+import { useToast } from "@/components/ui/use-toast";
 
 export interface EditProfileDialogProps {
     user: {
@@ -37,6 +38,7 @@ import { useSession } from "next-auth/react";
 export default function EditProfileDialog({ user, forceOpen = false }: EditProfileDialogProps) {
     const { update } = useSession();
     const [open, setOpen] = useState(forceOpen);
+    const { toast } = useToast();
     
     useEffect(() => {
         if (forceOpen) {
@@ -86,7 +88,11 @@ export default function EditProfileDialog({ user, forceOpen = false }: EditProfi
             }
             router.refresh();
         } catch {
-            alert("Something went wrong");
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Something went wrong while updating your profile.",
+            });
         } finally {
             setIsLoading(false);
         }
