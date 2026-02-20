@@ -30,7 +30,9 @@ interface DepositRequest {
     id: string;
     userId: string;
     amount: number;
-    upiId: string;
+    type: string;
+    upiId: string | null;
+    transactionId: string | null;
     message: string | null;
     status: string;
     adminMessage: string | null;
@@ -45,6 +47,7 @@ export default function DepositManagement() {
     const [deposits, setDeposits] = useState<DepositRequest[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filterStatus, setFilterStatus] = useState<string>("ALL");
+    const [filterType, setFilterType] = useState<string>("ALL");
     const [selectedRequest, setSelectedRequest] = useState<DepositRequest | null>(null);
     const [actionStatus, setActionStatus] = useState<"APPROVED" | "REJECTED" | "">("");
     const [adminMessage, setAdminMessage] = useState("");
@@ -54,9 +57,11 @@ export default function DepositManagement() {
     const fetchDeposits = async () => {
         setIsLoading(true);
         try {
-            const url = filterStatus === "ALL" 
-                ? "/api/admin/deposits" 
-                : `/api/admin/deposits?status=${filterStatus}`;
+            const params = new URLSearchParams();
+            if (filterStatus !== "ALL") params.append("status", filterStatus);
+            if (filterType !== "ALL") params.append("type", filterType);
+            
+            const url = `/api/admin/deposits?${params.toString()}`;
             const res = await fetch(url);
             if (!res.ok) throw new Error("Failed to fetch");
             const data = await res.json();
@@ -70,7 +75,7 @@ export default function DepositManagement() {
 
     useEffect(() => {
         fetchDeposits();
-    }, [filterStatus]);
+    }, [filterStatus, filterType]);
 
     const handleAction = async () => {
         if (!selectedRequest || !actionStatus) return;
@@ -82,15 +87,18 @@ export default function DepositManagement() {
                 body: JSON.stringify({ status: actionStatus, adminMessage }),
             });
 
-            if (!res.ok) throw new Error("Failed to process request");
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || "Failed to process request");
+            }
 
             toast({ title: "Success", description: `Request ${actionStatus.toLowerCase()} successfully.` });
             setSelectedRequest(null);
             setAdminMessage("");
             setActionStatus("");
             fetchDeposits();
-        } catch (error) {
-            toast({ variant: "destructive", title: "Error", description: "Operation failed" });
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Error", description: error.message || "Operation failed" });
         } finally {
             setIsSubmitting(false);
         }
@@ -99,21 +107,37 @@ export default function DepositManagement() {
     return (
         <div className="space-y-4">
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-muted/30 p-4 rounded-lg">
-                <div className="flex items-center gap-2 w-full md:w-auto">
-                    <Filter className="h-4 w-4 text-muted-foreground" />
-                    <select 
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="bg-transparent text-sm font-medium border-none focus:ring-0 cursor-pointer"
-                    >
-                        <option value="ALL">All Requests</option>
-                        <option value="PENDING">Pending</option>
-                        <option value="APPROVED">Approved</option>
-                        <option value="REJECTED">Rejected</option>
-                    </select>
+                <div className="flex flex-wrap items-center gap-6 w-full md:w-auto">
+                    <div className="flex items-center gap-2">
+                        <Filter className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-xs uppercase font-bold text-muted-foreground">Status:</span>
+                        <select 
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className="bg-transparent text-sm font-medium border-none focus:ring-0 cursor-pointer"
+                        >
+                            <option value="ALL">All Status</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="APPROVED">Approved</option>
+                            <option value="REJECTED">Rejected</option>
+                        </select>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs uppercase font-bold text-muted-foreground tracking-wider">Type:</span>
+                        <select 
+                            value={filterType}
+                            onChange={(e) => setFilterType(e.target.value)}
+                            className="bg-transparent text-sm font-medium border-none focus:ring-0 cursor-pointer"
+                        >
+                            <option value="ALL">All Types</option>
+                            <option value="DEPOSIT">Deposits Only</option>
+                            <option value="WITHDRAWAL">Withdrawals Only</option>
+                        </select>
+                    </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                    Total: {deposits.length} requests
+                <div className="text-sm text-muted-foreground whitespace-nowrap">
+                    Total: <span className="font-bold text-foreground">{deposits.length}</span> requests
                 </div>
             </div>
 
@@ -124,10 +148,12 @@ export default function DepositManagement() {
             ) : (
                 <div className="border rounded-lg bg-card">
                     <div className="w-full overflow-x-auto">
-                        <Table className="min-w-[700px]">
+                        <Table className="min-w-[800px]">
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>User / Date</TableHead>
+                                    <TableHead>Type</TableHead>
+                                    <TableHead>Amount</TableHead>
                                     <TableHead>Details</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
@@ -136,8 +162,8 @@ export default function DepositManagement() {
                             <TableBody>
                                 {deposits.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
-                                            No withdrawal requests found.
+                                        <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                                            No payment requests found.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
@@ -151,9 +177,28 @@ export default function DepositManagement() {
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <div className="text-sm font-bold text-red-600 whitespace-nowrap">₹{deposit.amount}</div>
-                                                <div className="text-xs whitespace-nowrap">UPI: {deposit.upiId}</div>
-                                                {deposit.message && <div className="text-[10px] italic line-clamp-1 mt-1">"{deposit.message}"</div>}
+                                                <Badge variant="outline" className={deposit.type === "DEPOSIT" ? "text-blue-600 border-blue-200 bg-blue-50" : "text-orange-600 border-orange-200 bg-orange-50"}>
+                                                    {deposit.type === "DEPOSIT" ? "Deposit" : "Withdrawal"}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className={`text-sm font-bold whitespace-nowrap ${deposit.type === "DEPOSIT" ? "text-green-600" : "text-red-600"}`}>
+                                                    {deposit.type === "DEPOSIT" ? "+" : "-"} ₹{deposit.amount}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                {deposit.type === "DEPOSIT" ? (
+                                                    <div className="text-xs">
+                                                        <span className="text-muted-foreground block text-[10px] uppercase font-bold">Transaction ID:</span>
+                                                        <span className="font-mono bg-slate-100 px-1 rounded select-all">{deposit.transactionId}</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-xs">
+                                                        <span className="text-muted-foreground block text-[10px] uppercase font-bold">UPI ID:</span>
+                                                        <span className="select-all">{deposit.upiId}</span>
+                                                    </div>
+                                                )}
+                                                {deposit.message && <div className="text-[10px] italic line-clamp-1 mt-1 text-muted-foreground" title={deposit.message}>"{deposit.message}"</div>}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge variant={
@@ -206,17 +251,21 @@ export default function DepositManagement() {
             <Dialog open={!!selectedRequest} onOpenChange={(open) => !open && setSelectedRequest(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{actionStatus === "APPROVED" ? "Approve" : "Reject"} Withdrawal Request</DialogTitle>
+                        <DialogTitle>{actionStatus === "APPROVED" ? "Approve" : "Reject"} {selectedRequest?.type === "DEPOSIT" ? "Coin Deposit" : "Withdrawal"}</DialogTitle>
                         <DialogDescription>
                             Are you sure you want to {actionStatus.toLowerCase()} the request of ₹{selectedRequest?.amount} for {selectedRequest?.user.name}? 
-                            {actionStatus === "APPROVED" && " This will DEDUCT coins from their balance."}
+                            {actionStatus === "APPROVED" && (
+                                selectedRequest?.type === "DEPOSIT" 
+                                ? " This will ADD coins to their balance." 
+                                : " This will DEDUCT coins from their balance."
+                            )}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
                             <Label>Message for User (Optional)</Label>
                             <Textarea 
-                                placeholder="Example: Confirmation code 1234..."
+                                placeholder={actionStatus === "APPROVED" ? "Confirmation message..." : "Reason for rejection..."}
                                 value={adminMessage}
                                 onChange={(e) => setAdminMessage(e.target.value)}
                             />

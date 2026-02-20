@@ -66,16 +66,18 @@ model User {
 }
 
 model DepositRequest {
-  id           String   @id @default(cuid())
-  userId       String
-  amount       Float
-  upiId        String
-  message      String?
-  status       String   @default("PENDING")
-  adminMessage String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  userId        String
+  amount        Float
+  type          String   @default("WITHDRAWAL")
+  upiId         String?
+  transactionId String?
+  message       String?
+  status        String   @default("PENDING")
+  adminMessage  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }

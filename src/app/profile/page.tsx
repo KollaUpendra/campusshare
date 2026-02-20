@@ -9,7 +9,7 @@ import EditProfileDialog from "@/components/profile/EditProfileDialog";
 import { Button } from "@/components/ui/button";
 import SignOutButton from "@/components/auth/SignOutButton";
 import DepositRequestDialog from "@/components/profile/DepositRequestDialog";
-import DepositHistory from "@/components/profile/DepositHistory";
+import DepositCoinsDialog from "@/components/profile/DepositCoinsDialog";
 
 export default async function ProfilePage() {
     const session = await getServerSession(authOptions);
@@ -18,15 +18,9 @@ export default async function ProfilePage() {
         redirect("/api/auth/signin");
     }
 
-    const userData = await db.user.findUnique({
-        where: { id: session.user.id },
-        include: {
-            depositRequests: {
-                orderBy: { createdAt: "desc" },
-                take: 10
-            }
-        }
-    });
+    const userData = await (db.user.findUnique({
+        where: { id: session.user.id }
+    }) as any);
 
     if (!userData) {
         return <div>User not found</div>;
@@ -39,10 +33,6 @@ export default async function ProfilePage() {
         <div className="container mx-auto px-4 py-8 max-w-4xl space-y-8">
             {/* Header / Profile Card */}
             <div className="flex flex-col md:flex-row items-center gap-6 p-6 bg-card border rounded-xl shadow-sm relative">
-                <div className="absolute top-4 right-4 z-10">
-                    <EditProfileDialog user={user} />
-                </div>
-                
                 {/* User Image */}
                 <div className="relative h-24 w-24 rounded-full overflow-hidden border-2 border-primary/20 shrink-0">
                     {user.image ? (
@@ -56,10 +46,11 @@ export default async function ProfilePage() {
 
                 {/* User Info */}
                 <div className="flex-1 space-y-3 text-center md:text-left">
-                    <div>
+                    <div className="flex flex-col md:flex-row md:items-center gap-2 justify-center md:justify-start">
                         <h1 className="text-2xl font-bold">{user.name}</h1>
-                        <p className="text-muted-foreground">{user.email}</p>
+                        <EditProfileDialog user={user} />
                     </div>
+                    <p className="text-muted-foreground">{user.email}</p>
                     
                     {/* Role Badge */}
                     <div className="flex justify-center md:justify-start">
@@ -98,9 +89,17 @@ export default async function ProfilePage() {
 
                     {/* Actions */}
                     <div className="flex flex-col gap-2 w-full">
+                        <DepositCoinsDialog />
                         <DepositRequestDialog />
-                         
-                         <Button variant="outline" size="sm" asChild className="w-full justify-start">
+                        
+                        <Button variant="outline" size="sm" asChild className="w-full justify-start">
+                            <Link href="/profile/payments">
+                                <History className="mr-2 h-4 w-4" />
+                                Payment History
+                            </Link>
+                        </Button>
+
+                        <Button variant="outline" size="sm" asChild className="w-full justify-start">
                             <Link href="/transactions">
                                 <Settings className="mr-2 h-4 w-4" />
                                 Transactions
@@ -110,15 +109,6 @@ export default async function ProfilePage() {
                         <SignOutButton />
                     </div>
                 </div>
-            </div>
-
-            {/* Payment History Section */}
-            <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                    <History className="h-5 w-5 text-primary" />
-                    <h2 className="text-xl font-bold">Payment Request History</h2>
-                </div>
-                <DepositHistory deposits={user.depositRequests} />
             </div>
         </div>
     );

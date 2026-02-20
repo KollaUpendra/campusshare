@@ -43,55 +43,83 @@ export async function PUT(
       });
 
       if (status === "APPROVED") {
-        // Double check user balance again at time of approval
-        const user = await tx.user.findUnique({
-          where: { id: depositRequest.userId },
-          select: { coins: true }
-        });
+        if (depositRequest.type === "WITHDRAWAL") {
+          // Double check user balance again at time of approval
+          const user = await tx.user.findUnique({
+            where: { id: depositRequest.userId },
+            select: { coins: true }
+          });
 
-        if (!user || user.coins < depositRequest.amount) {
-          throw new Error("Insufficient user balance at time of approval");
-        }
+          if (!user || user.coins < depositRequest.amount) {
+            throw new Error("Insufficient user balance at time of approval");
+          }
 
-        // Update user coins (DECREMENT for withdrawal)
-        await tx.user.update({
-          where: { id: depositRequest.userId },
-          data: {
-            coins: {
-              decrement: depositRequest.amount,
+          // Update user coins (DECREMENT for withdrawal)
+          await tx.user.update({
+            where: { id: depositRequest.userId },
+            data: {
+              coins: {
+                decrement: depositRequest.amount,
+              },
             },
-          },
-        });
+          });
 
-        // Add to Transaction table (Debit from user perspective)
-        await tx.transaction.create({
-          data: {
-            amount: depositRequest.amount,
-            type: "WITHDRAWAL",
-            status: "COMPLETED",
-            fromUserId: depositRequest.userId, // Money leaving user
-            referenceId: updatedRequest.id,
-          },
-        });
+          // Add to Transaction table (Debit from user perspective)
+          await tx.transaction.create({
+            data: {
+              amount: depositRequest.amount,
+              type: "WITHDRAWAL",
+              status: "COMPLETED",
+              fromUserId: depositRequest.userId,
+              referenceId: updatedRequest.id,
+            },
+          });
+        } else if (depositRequest.type === "DEPOSIT") {
+          // Update user coins (INCREMENT for deposit)
+          await tx.user.update({
+            where: { id: depositRequest.userId },
+            data: {
+              coins: {
+                increment: depositRequest.amount,
+              },
+            },
+          });
+
+          // Add to Transaction table (Credit from user perspective)
+          await tx.transaction.create({
+            data: {
+              amount: depositRequest.amount,
+              type: "DEPOSIT",
+              status: "COMPLETED",
+              toUserId: depositRequest.userId,
+              referenceId: updatedRequest.id,
+            },
+          });
+        }
       }
 
       // 1. Create Admin Action Log
+      const actionType = status === "APPROVED" 
+        ? (depositRequest.type === "WITHDRAWAL" ? "APPROVE_WITHDRAWAL" : "APPROVE_DEPOSIT")
+        : (depositRequest.type === "WITHDRAWAL" ? "REJECT_WITHDRAWAL" : "REJECT_DEPOSIT");
+
       await tx.adminActionLog.create({
         data: {
           adminId: session.user.id,
-          actionType: status === "APPROVED" ? "APPROVE_WITHDRAWAL" : "REJECT_WITHDRAWAL",
+          actionType,
           targetUserId: depositRequest.userId,
-          notes: `Withdrawal of ₹${depositRequest.amount}. Admin message: ${adminMessage || "None"}`,
+          notes: `${depositRequest.type} of ₹${depositRequest.amount}. Admin message: ${adminMessage || "None"}`,
         },
       });
 
       // 2. Create Notification for User
+      const reqTypeName = depositRequest.type === "WITHDRAWAL" ? "withdrawal" : "coin deposit";
       await tx.notification.create({
         data: {
           userId: depositRequest.userId,
           message: status === "APPROVED" 
-            ? `Your withdrawal request of ₹${depositRequest.amount} has been approved and processed! ${adminMessage ? `Message: ${adminMessage}` : ""}`
-            : `Your withdrawal request of ₹${depositRequest.amount} was rejected. ${adminMessage ? `Reason: ${adminMessage}` : ""}`,
+            ? `Your ${reqTypeName} request of ₹${depositRequest.amount} has been approved and processed! ${adminMessage ? `Message: ${adminMessage}` : ""}`
+            : `Your ${reqTypeName} request of ₹${depositRequest.amount} was rejected. ${adminMessage ? `Reason: ${adminMessage}` : ""}`,
         },
       });
 
