@@ -35,32 +35,34 @@ model Session {
 }
 
 model User {
-  id                   String           @id @default(cuid())
-  name                 String?
-  email                String?          @unique
-  image                String?
-  role                 String           @default("student")
-  createdAt            DateTime         @default(now())
-  isBlocked            Boolean          @default(false)
-  bio                  String?
-  coins                Float            @default(200.0)
-  phoneNumber          String?
-  pendingFine          Float            @default(0)
-  address              String?
-  branch               String?
-  section              String?
-  year                 String?
-  accounts             Account[]
-  adminActions         AdminActionLog[] @relation("AdminActions")
-  adminTargetActions   AdminActionLog[] @relation("AdminTargetUser")
-  bookings             Booking[]        @relation("UserBookings")
-  complaints           Complaint[]
-  depositRequests      DepositRequest[]
-  items                Item[]           @relation("UserItems")
-  notifications        Notification[]
-  sessions             Session[]
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          String    @default("student")
+  isBlocked     Boolean   @default(false)
+  pendingFine   Float     @default(0)
+  coins         Float     @default(200.0)
+  bio           String?
+  phoneNumber   String?
+  year          String?
+  branch        String?
+  section       String?
+  address       String?
+  createdAt     DateTime  @default(now())
+
+  accounts      Account[]
+  sessions      Session[]
+  items         Item[]           @relation("UserItems")
+  bookings      Booking[]        @relation("UserBookings")
+  notifications Notification[]
   sentTransactions     Transaction[]    @relation("SentTransactions")
   receivedTransactions Transaction[]    @relation("ReceivedTransactions")
+  complaints           Complaint[]
+  adminActions         AdminActionLog[] @relation("AdminActions")
+  adminTargetActions   AdminActionLog[] @relation("AdminTargetUser")
+  depositRequests      DepositRequest[]
 }
 
 model DepositRequest {
