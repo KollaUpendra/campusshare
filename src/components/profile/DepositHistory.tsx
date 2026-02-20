@@ -15,7 +15,9 @@ import { Coins, Clock, CheckCircle2, XCircle } from "lucide-react";
 interface Deposit {
     id: string;
     amount: number;
-    upiId: string;
+    type: string;
+    upiId: string | null;
+    transactionId: string | null;
     status: string;
     adminMessage: string | null;
     createdAt: string;
@@ -26,7 +28,7 @@ export default function DepositHistory({ deposits }: { deposits: Deposit[] }) {
         return (
             <div className="text-center py-8 border rounded-lg bg-muted/20">
                 <Clock className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-muted-foreground">No redemption requests yet.</p>
+                <p className="text-muted-foreground">No payment requests yet.</p>
             </div>
         );
     }
@@ -37,7 +39,9 @@ export default function DepositHistory({ deposits }: { deposits: Deposit[] }) {
                 <TableHeader>
                     <TableRow>
                         <TableHead>Date</TableHead>
+                        <TableHead>Type</TableHead>
                         <TableHead>Amount</TableHead>
+                        <TableHead>Details</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Admin Message</TableHead>
                     </TableRow>
@@ -49,10 +53,22 @@ export default function DepositHistory({ deposits }: { deposits: Deposit[] }) {
                                 {format(new Date(deposit.createdAt), "dd MMM yyyy")}
                             </TableCell>
                             <TableCell>
+                                <Badge variant="outline" className={deposit.type === "DEPOSIT" ? "text-blue-600 border-blue-200" : "text-orange-600 border-orange-200"}>
+                                    {deposit.type === "DEPOSIT" ? "Deposit" : "Withdrawal"}
+                                </Badge>
+                            </TableCell>
+                            <TableCell>
                                 <div className="flex items-center gap-1 font-medium">
                                     <Coins className="h-3 w-3 text-yellow-600" />
                                     {deposit.amount}
                                 </div>
+                            </TableCell>
+                            <TableCell className="text-xs">
+                                {deposit.type === "DEPOSIT" ? (
+                                    <span className="font-mono text-[10px] bg-slate-100 px-1 rounded">TX: {deposit.transactionId}</span>
+                                ) : (
+                                    <span className="text-muted-foreground">UPI: {deposit.upiId}</span>
+                                )}
                             </TableCell>
                             <TableCell>
                                 <div className="flex items-center gap-1">

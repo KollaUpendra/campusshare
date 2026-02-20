@@ -12,9 +12,14 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
+    const type = searchParams.get("type");
+
+    const whereClause: any = {};
+    if (status) whereClause.status = status;
+    if (type) whereClause.type = type;
 
     const deposits = await db.depositRequest.findMany({
-      where: status ? { status } : {},
+      where: whereClause,
       include: {
         user: {
           select: {
