@@ -4,6 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Loader2, Power, Trash2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface AdminItemActionsProps {
     itemId: string;
@@ -12,7 +21,9 @@ interface AdminItemActionsProps {
 
 export default function AdminItemActions({ itemId, currentStatus }: AdminItemActionsProps) {
     const [loading, setLoading] = useState<string | null>(null);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const router = useRouter();
+    const { toast } = useToast();
 
     const handleToggleStatus = async () => {
         setLoading("toggle");
@@ -24,21 +35,28 @@ export default function AdminItemActions({ itemId, currentStatus }: AdminItemAct
             });
 
             if (!res.ok) {
-                alert(await res.text());
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: await res.text(),
+                });
                 return;
             }
 
             router.refresh();
         } catch {
-            alert("Network error");
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Network error",
+            });
         } finally {
             setLoading(null);
         }
     };
 
     const handleDelete = async () => {
-        if (!confirm("Are you sure you want to permanently delete this item?")) return;
-
+        setIsConfirmOpen(false);
         setLoading("delete");
         try {
             const res = await fetch(`/api/admin/items?itemId=${itemId}`, {
@@ -46,13 +64,25 @@ export default function AdminItemActions({ itemId, currentStatus }: AdminItemAct
             });
 
             if (!res.ok) {
-                alert(await res.text());
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: await res.text(),
+                });
                 return;
             }
 
+            toast({
+                title: "Success",
+                description: "Item deleted successfully.",
+            });
             router.refresh();
         } catch {
-            alert("Network error");
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Network error",
+            });
         } finally {
             setLoading(null);
         }
@@ -76,7 +106,7 @@ export default function AdminItemActions({ itemId, currentStatus }: AdminItemAct
             <Button
                 variant="destructive"
                 size="sm"
-                onClick={handleDelete}
+                onClick={() => setIsConfirmOpen(true)}
                 disabled={loading !== null}
             >
                 {loading === "delete" ? (
@@ -85,6 +115,26 @@ export default function AdminItemActions({ itemId, currentStatus }: AdminItemAct
                     <><Trash2 className="h-3 w-3 mr-1" /> Delete</>
                 )}
             </Button>
+
+            <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Item</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to permanently delete this item? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsConfirmOpen(false)} disabled={loading !== null}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleDelete} disabled={loading !== null}>
+                            {loading === "delete" && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                            Delete Permanently
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
