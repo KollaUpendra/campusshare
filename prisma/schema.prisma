@@ -56,6 +56,7 @@ model User {
   id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
+  emailVerified DateTime?
   image         String?
   role          String    @default("student") // 'student' | 'admin'
   isBlocked     Boolean   @default(false)

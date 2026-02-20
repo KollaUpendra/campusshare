@@ -51,17 +51,7 @@ export const authOptions: NextAuthOptions = {
         strategy: "jwt",
         maxAge: 30 * 24 * 60 * 60, // 30 days
     },
-    cookies: {
-        sessionToken: {
-            name: `${cookiePrefix}next-auth.session-token`,
-            options: {
-                httpOnly: true,
-                sameSite: 'lax',
-                path: '/',
-                secure: useSecureCookies,
-            },
-        },
-    },
+    // cookies property removed to use NextAuth standard behavior
     providers: [
         /**
          * Google OAuth Provider
@@ -117,17 +107,17 @@ export const authOptions: NextAuthOptions = {
 
                 // Always fetch latest data (coins changes frequently)
                 if (token.id) {
-                    const dbUser = await db.user.findUnique({
+                    const dbUser = await (db.user as any).findUnique({
                         where: { id: token.id as string },
-                        select: { 
-                            role: true, 
+                        select: {
+                            role: true,
                             coins: true,
                             year: true,
                             branch: true,
                             section: true,
                             address: true,
                             phoneNumber: true,
-                         },
+                        },
                     });
                     if (dbUser) {
                         token.role = dbUser.role;
