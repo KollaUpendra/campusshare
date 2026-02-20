@@ -1,13 +1,22 @@
 import db from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 
-import BlockUserButton from "@/components/admin/BlockUserButton"; // We will create this
+import BlockUserButton from "@/components/admin/BlockUserButton";
+import UserDetailsDialog from "@/components/admin/UserDetailsDialog";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
     const users = await db.user.findMany({
-        orderBy: { createdAt: "desc" }
+        orderBy: { createdAt: "desc" },
+        include: {
+            _count: {
+                select: {
+                    items: true,
+                    bookings: true
+                }
+            }
+        }
     });
 
     return (
@@ -27,7 +36,9 @@ export default async function AdminUsersPage() {
                     <tbody className="divide-y">
                         {users.map((user) => (
                             <tr key={user.id} className="hover:bg-muted/50">
-                                <td className="p-4 font-medium">{user.name}</td>
+                                <td className="p-4">
+                                    <UserDetailsDialog user={user} />
+                                </td>
                                 <td className="p-4 text-muted-foreground">{user.email}</td>
                                 <td className="p-4">
                                     <Badge variant="outline">{user.role}</Badge>

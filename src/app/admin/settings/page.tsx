@@ -45,6 +45,25 @@ export default function AdminSettingsPage() {
                         </CardContent>
                     </Card>
                 </Link>
+
+                <Link href="/admin/settings/deposits" className="group">
+                    <Card className="h-full transition-all hover:border-primary cursor-pointer">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Coins className="h-5 w-5 text-primary" />
+                                Payment Requests
+                            </CardTitle>
+                            <CardDescription>
+                                Approve or reject user cash deposit requests.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                                Manage Requests <ArrowRight className="ml-1 h-4 w-4" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
             </div>
         </div>
     );

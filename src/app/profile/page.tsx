@@ -3,11 +3,13 @@ import { authOptions } from "@/lib/auth";
 import db from "@/lib/db";
 import { redirect } from "next/navigation";
 import Image from "next/image";
-import { User, Coins, Phone, FileText, Settings } from "lucide-react";
+import { User, Coins, Phone, FileText, Settings, History } from "lucide-react";
 import Link from "next/link";
 import EditProfileDialog from "@/components/profile/EditProfileDialog";
 import { Button } from "@/components/ui/button";
 import SignOutButton from "@/components/auth/SignOutButton";
+import DepositRequestDialog from "@/components/profile/DepositRequestDialog";
+import DepositHistory from "@/components/profile/DepositHistory";
 
 export default async function ProfilePage() {
     const session = await getServerSession(authOptions);
@@ -18,6 +20,12 @@ export default async function ProfilePage() {
 
     const userData = await db.user.findUnique({
         where: { id: session.user.id },
+        include: {
+            depositRequests: {
+                orderBy: { createdAt: "desc" },
+                take: 10
+            }
+        }
     });
 
     if (!userData) {
@@ -90,7 +98,7 @@ export default async function ProfilePage() {
 
                     {/* Actions */}
                     <div className="flex flex-col gap-2 w-full">
-
+                        <DepositRequestDialog />
                          
                          <Button variant="outline" size="sm" asChild className="w-full justify-start">
                             <Link href="/transactions">
@@ -102,6 +110,15 @@ export default async function ProfilePage() {
                         <SignOutButton />
                     </div>
                 </div>
+            </div>
+
+            {/* Payment History Section */}
+            <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                    <History className="h-5 w-5 text-primary" />
+                    <h2 className="text-xl font-bold">Payment Request History</h2>
+                </div>
+                <DepositHistory deposits={user.depositRequests} />
             </div>
         </div>
     );
