@@ -44,8 +44,8 @@ export default async function AdminTransactionsPage() {
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
-            <div className="relative w-full overflow-auto">
-              <table className="w-full caption-bottom text-sm text-left">
+            <div className="w-full overflow-x-auto">
+              <table className="w-full caption-bottom text-sm text-left min-w-[800px]">
                 <thead className="[&_tr]:border-b">
                   <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
                     <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Date</th>
@@ -75,7 +75,7 @@ export default async function AdminTransactionsPage() {
                         </td>
                         <td className="p-4 align-middle">
                           <div className="flex flex-col">
-                            <span className="font-medium">
+                            <span className="font-medium whitespace-nowrap">
                               {txn.fromUser?.name || "System"}
                             </span>
                             <span className="text-xs text-muted-foreground">
@@ -85,7 +85,7 @@ export default async function AdminTransactionsPage() {
                         </td>
                         <td className="p-4 align-middle">
                           <div className="flex flex-col">
-                            <span className="font-medium">
+                            <span className="font-medium whitespace-nowrap">
                               {txn.toUser?.name || "System"}
                             </span>
                             <span className="text-xs text-muted-foreground">
@@ -93,9 +93,9 @@ export default async function AdminTransactionsPage() {
                             </span>
                           </div>
                         </td>
-                        <td className="p-4 align-middle">{txn.item?.title || "-"}</td>
+                        <td className="p-4 align-middle whitespace-nowrap">{txn.item?.title || "-"}</td>
                         <td className="p-4 align-middle font-bold">
-                          {txn.amount.toFixed(2)}
+                          ₹{txn.amount.toFixed(2)}
                         </td>
                         <td className="p-4 align-middle">
                           <Badge

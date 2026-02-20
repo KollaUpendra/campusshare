@@ -55,6 +55,7 @@ export const viewport: Viewport = {
 import DevToolsHider from "@/components/layout/DevToolsHider";
 import { Toaster } from "@/components/ui/toaster";
 import ProfileCompletionCheck from "@/components/profile/ProfileCompletionCheck";
+import AppShell from "@/components/layout/AppShell";
 
 export default function RootLayout({
   children,
@@ -66,29 +67,10 @@ export default function RootLayout({
       <body className={inter.className}>
         <DevToolsHider />
         <Providers>
-            <ProfileCompletionCheck />
-          <div className="flex min-h-screen flex-col bg-muted/30">
-            {/* Common Header across all pages */}
-            <Header />
-
-            {/* Main Content Area - Responsive Container */}
-            <main className="flex-1 pb-24 pt-4 px-4 container mx-auto max-w-md md:max-w-2xl lg:max-w-4xl">
-              {children}
-            </main>
-
-            {/* Mobile Bottom Navigation */}
-            <BottomNav />
-
-            {/* Footer with Legal Links */}
-            <footer className="py-6 text-center text-sm text-gray-500 pb-24 md:pb-6">
-              <div className="flex justify-center gap-4">
-                <a href="/privacy" className="hover:underline hover:text-gray-900">Privacy Policy</a>
-                <span>•</span>
-                <a href="/terms" className="hover:underline hover:text-gray-900">Terms of Service</a>
-              </div>
-              <p className="mt-2">© {new Date().getFullYear()} CampusShare</p>
-            </footer>
-          </div>
+          <ProfileCompletionCheck />
+          <AppShell>
+            {children}
+          </AppShell>
           <Toaster />
         </Providers>
       </body>
