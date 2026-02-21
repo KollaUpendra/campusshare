@@ -15,7 +15,7 @@ export default async function ProfilePage() {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
-        redirect("/api/auth/signin");
+        redirect("/");
     }
 
     const userData = await (db.user.findUnique({
@@ -51,10 +51,10 @@ export default async function ProfilePage() {
                         <EditProfileDialog user={user} />
                     </div>
                     <p className="text-muted-foreground">{user.email}</p>
-                    
+
                     {/* Role Badge */}
                     <div className="flex justify-center md:justify-start">
-                         <div className="bg-secondary text-secondary-foreground hover:bg-secondary/80 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                        <div className="bg-secondary text-secondary-foreground hover:bg-secondary/80 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
                             {user.role || "student"}
                         </div>
                     </div>
@@ -77,7 +77,7 @@ export default async function ProfilePage() {
 
                 {/* Right Side: Actions & Balances */}
                 <div className="flex flex-col items-center gap-4 w-full md:w-auto">
-                    
+
                     {/* Balance Card */}
                     <div className="flex flex-col items-center gap-1 min-w-[140px] bg-yellow-50/50 p-3 rounded-xl border border-yellow-100">
                         <div className="flex items-center gap-2 text-2xl font-bold text-yellow-600">
@@ -91,7 +91,7 @@ export default async function ProfilePage() {
                     <div className="flex flex-col gap-2 w-full">
                         <DepositCoinsDialog />
                         <DepositRequestDialog />
-                        
+
                         <Button variant="outline" size="sm" asChild className="w-full justify-start">
                             <Link href="/profile/payments">
                                 <History className="mr-2 h-4 w-4" />

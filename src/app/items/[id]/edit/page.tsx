@@ -26,7 +26,7 @@ export default async function EditItemPage(props: { params: Promise<{ id: string
 
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-        redirect("/api/auth/signin");
+        redirect("/");
     }
 
     const item = await db.item.findUnique({

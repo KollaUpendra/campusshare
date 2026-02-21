@@ -14,7 +14,7 @@ export default async function TransactionsPage() {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
-        redirect("/api/auth/signin");
+        redirect("/");
     }
 
     const { user } = session;
@@ -43,7 +43,7 @@ export default async function TransactionsPage() {
         ...userData.sentTransactions
             .filter((t: any) => t.amount < 0) // Only show debits (money leaving)
             .map((t: any) => ({ ...t, direction: 'out', amount: Math.abs(t.amount) })),
-        
+
         ...userData.receivedTransactions
             .filter((t: any) => t.amount > 0) // Only show credits (money entering)
             .map((t: any) => ({ ...t, direction: 'in' }))
@@ -69,9 +69,8 @@ export default async function TransactionsPage() {
                         <Card key={t.id} className="overflow-hidden">
                             <CardContent className="p-4 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
-                                        t.direction === 'in' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-                                    }`}>
+                                    <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${t.direction === 'in' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                                        }`}>
                                         {t.direction === 'in' ? <ArrowDownLeft className="h-5 w-5" /> : <ArrowUpRight className="h-5 w-5" />}
                                     </div>
                                     <div>
@@ -84,8 +83,8 @@ export default async function TransactionsPage() {
                                             </span>
                                             <span className="hidden sm:inline">•</span>
                                             <span>
-                                                {t.direction === 'in' 
-                                                    ? `From: ${t.fromUser?.name || 'Unknown'}` 
+                                                {t.direction === 'in'
+                                                    ? `From: ${t.fromUser?.name || 'Unknown'}`
                                                     : `To: ${t.toUser?.name || 'Unknown'}`
                                                 }
                                             </span>
