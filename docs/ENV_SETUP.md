@@ -1,155 +1,157 @@
 # CampusShare — Environment Setup
 
-## Prerequisites
-
-| Software | Minimum Version | Purpose |
-|---|---|---|
-| Node.js | 18.17+ (20.x recommended) | Runtime |
-| npm | 9+ | Package manager |
-| Git | 2.x | Version control |
-| PostgreSQL | 15+ | Database (or use Supabase) |
+> All secrets are loaded from `.env` at the project root. **Never commit `.env` to version control.**
 
 ---
 
 ## Environment Variables
 
-> **File:** `.env` (root of project — NOT committed to git)
-
 | Variable | Required | Purpose | Used In |
 |---|---|---|---|
-| `DATABASE_URL` | ✅ | PostgreSQL connection (pooled via PgBouncer) | `prisma/schema.prisma`, all API routes via `db.ts` |
-| `DIRECT_URL` | ✅ | Direct PostgreSQL connection (for migrations) | `prisma/schema.prisma` |
+| `DATABASE_URL` | ✅ | PostgreSQL connection via PgBouncer (port 6543) | `prisma/schema.prisma`, all API routes via `@/lib/db` |
+| `DIRECT_URL` | ✅ | Direct PostgreSQL connection (port 5432) for migrations | `prisma/schema.prisma` (Prisma migrate) |
 | `GOOGLE_CLIENT_ID` | ✅ | Google OAuth client ID | `src/lib/auth.ts` |
 | `GOOGLE_CLIENT_SECRET` | ✅ | Google OAuth client secret | `src/lib/auth.ts` |
-| `NEXTAUTH_SECRET` | ✅ | JWT signing secret | NextAuth internals |
-| `NEXTAUTH_URL` | ✅ | Base URL of the application | NextAuth internals, cookie settings |
-| `ALLOWED_DOMAIN` | ❌ | Email domain restriction (currently unused) | `src/lib/auth.ts` (logic removed) |
-| `CLOUDINARY_CLOUD_NAME` | ✅ | Cloudinary account cloud name | `src/app/api/sign-cloudinary/route.ts` |
-| `CLOUDINARY_API_KEY` | ✅ | Cloudinary API key | Server-side signing |
-| `CLOUDINARY_API_SECRET` | ✅ | Cloudinary API secret | `src/app/api/sign-cloudinary/route.ts` |
-| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | ✅ | Cloudinary cloud name (client-side) | `next-cloudinary` widget |
-| `NEXT_PUBLIC_CLOUDINARY_API_KEY` | ✅ | Cloudinary API key (client-side) | `next-cloudinary` widget |
+| `NEXTAUTH_SECRET` | ✅ | JWT signing secret (must be strong in production) | NextAuth internals |
+| `NEXTAUTH_URL` | ✅ | Application base URL (e.g., `http://localhost:3000`) | NextAuth callback URLs, cookie prefix logic |
+| `ALLOWED_DOMAIN` | ❌ | Email domain filter (currently unused — open registration) | `src/lib/auth.ts` (referenced but disabled) |
+| `CLOUDINARY_CLOUD_NAME` | ✅ | Cloudinary cloud name (server-side) | `src/app/api/sign-cloudinary/route.ts` |
+| `CLOUDINARY_API_KEY` | ✅ | Cloudinary API key (server-side) | `src/app/api/sign-cloudinary/route.ts` |
+| `CLOUDINARY_API_SECRET` | ✅ | Cloudinary API secret (server-side signing) | `src/app/api/sign-cloudinary/route.ts` |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | ✅ | Cloudinary cloud name (client-side) | `src/components/items/AddItemForm.tsx` |
+| `NEXT_PUBLIC_CLOUDINARY_API_KEY` | ✅ | Cloudinary API key (client-side) | `src/components/items/AddItemForm.tsx` |
 
-### Example `.env`
+---
+
+## `.env` Template
+
 ```env
-DATABASE_URL="postgresql://user:password@host:6543/dbname?pgbouncer=true"
-DIRECT_URL="postgresql://user:password@host:5432/dbname"
+# === Database (Supabase PostgreSQL) ===
+DATABASE_URL="postgresql://postgres.[project-ref]:[password]@aws-1-[region].pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres.[project-ref]:[password]@aws-1-[region].pooler.supabase.com:5432/postgres"
+
+# === Google OAuth ===
 GOOGLE_CLIENT_ID="your-google-client-id.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="GOCSPX-your-google-client-secret"
-NEXTAUTH_SECRET="generate-a-secure-random-string-here"
+
+# === NextAuth ===
+NEXTAUTH_SECRET="generate-with-openssl-rand-base64-32"
 NEXTAUTH_URL="http://localhost:3000"
+
+# === Email Domain Filter (optional — currently disabled in code) ===
 ALLOWED_DOMAIN="@yourcollege.edu"
+
+# === Cloudinary (Server-side) ===
 CLOUDINARY_CLOUD_NAME="your-cloud-name"
 CLOUDINARY_API_KEY="your-api-key"
 CLOUDINARY_API_SECRET="your-api-secret"
+
+# === Cloudinary (Client-side — exposed to browser) ===
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your-cloud-name"
 NEXT_PUBLIC_CLOUDINARY_API_KEY="your-api-key"
 ```
-
-> ⚠️ **Security:** The actual `.env` file in the repository contains real credentials. Rotate all secrets before production deployment.
 
 ---
 
 ## Local Development Setup
 
-### 1. Clone the Repository
+### Prerequisites
+
+- **Node.js** ≥ 18.x
+- **npm** (comes with Node.js)
+- **PostgreSQL** database (Supabase recommended, or local PostgreSQL)
+- **Google Cloud Console** project with OAuth 2.0 credentials
+- **Cloudinary** account
+
+### Step-by-Step
+
 ```bash
+# 1. Clone the repository
 git clone https://github.com/KollaUpendra/campusshare.git
 cd campusshare
-```
 
-### 2. Install Dependencies
-```bash
+# 2. Install dependencies
 npm install
-```
-> This automatically runs `prisma generate` via the `postinstall` script.
+# This also runs `prisma generate` via the postinstall script
 
-### 3. Set Up Environment
-```bash
-cp .env.example .env
-# Edit .env with your credentials
-```
+# 3. Create .env file
+cp .env.example .env   # Or create manually using the template above
 
-### 4. Set Up Database
+# 4. Set up database
+npx prisma db push     # Push schema to database (uses DIRECT_URL)
+# OR
+npx prisma migrate deploy   # Run migrations if they exist
 
-**Option A: Use Supabase (recommended)**
-1. Create a Supabase project at https://supabase.com
-2. Get the connection strings from Dashboard → Settings → Database
-3. Set `DATABASE_URL` (pooled, port 6543) and `DIRECT_URL` (direct, port 5432)
+# 5. (Optional) Seed the database
+npx prisma db seed
 
-**Option B: Local PostgreSQL**
-```bash
-createdb campusshare
-# Set DATABASE_URL and DIRECT_URL in .env pointing to localhost
-```
-
-### 5. Run Migrations
-```bash
-npx prisma db push
-```
-> This syncs the Prisma schema with the database without creating migration files.
-
-### 6. (Optional) Seed Database
-```bash
-npx tsx prisma/seed.ts
-```
-
-### 7. Start Development Server
-```bash
+# 6. Start development server
 npm run dev
+# App available at http://localhost:3000
 ```
-> App runs at http://localhost:3000
 
-### 8. Set Up Google OAuth
-1. Go to https://console.cloud.google.com
-2. Create or select a project
-3. Enable Google+ API
-4. Create OAuth 2.0 credentials
-5. Set authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
-6. Copy Client ID and Secret to `.env`
+### Alternative: Using the batch launcher (Windows)
 
-### 9. Set Up Cloudinary
-1. Create account at https://cloudinary.com
-2. Get Cloud Name, API Key, API Secret from Dashboard
-3. Set values in `.env` (both server and `NEXT_PUBLIC_` client variables)
+```bash
+deploy_local.bat
+# Runs npm install + npm run dev automatically
+```
 
----
+### npm Scripts
 
-## Build & Run Commands
-
-| Command | Purpose |
-|---|---|
-| `npm run dev` | Start development server (hot reload) |
-| `npm run build` | Production build (`prisma generate && next build`) |
-| `npm start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npx prisma studio` | Open Prisma database GUI |
-| `npx prisma db push` | Sync schema to database |
-| `npx prisma generate` | Regenerate Prisma client |
+| Script | Command | Purpose |
+|---|---|---|
+| `postinstall` | `prisma generate` | Auto-generates Prisma Client after `npm install` |
+| `dev` | `next dev` | Start dev server with hot-reload |
+| `build` | `prisma generate && next build` | Production build |
+| `start` | `next start` | Start production server |
+| `lint` | `eslint` | Run ESLint checks |
 
 ---
 
-## Configuration Files
+## Google OAuth Setup
 
-| File | Purpose |
-|---|---|
-| `next.config.mjs` | Next.js config (image remotePatterns, devIndicators) |
-| `tsconfig.json` | TypeScript config (strict, ES2017, path aliases) |
-| `tailwind.config.js` | Tailwind CSS config (shadcn-ui design tokens) |
-| `postcss.config.js` | PostCSS (Tailwind + Autoprefixer) |
-| `eslint.config.mjs` | ESLint v10 flat config with `eslint-config-next` |
-| `components.json` | shadcn/ui component configuration |
-| `playwright.config.ts` | Playwright E2E test configuration |
-| `prisma/schema.prisma` | Database schema |
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a project or select existing
+3. Navigate to **APIs & Services** → **Credentials**
+4. Create **OAuth 2.0 Client ID** (type: Web Application)
+5. Set **Authorized redirect URIs:**
+   - Development: `http://localhost:3000/api/auth/callback/google`
+   - Production: `https://yourdomain.com/api/auth/callback/google`
+6. Copy Client ID and Client Secret to `.env`
 
 ---
 
-## Troubleshooting
+## Cloudinary Setup
 
-| Issue | Solution |
-|---|---|
-| `PrismaClientInitializationError` | Run `npx prisma generate` and restart dev server |
-| Google sign-in redirect loop | Verify `NEXTAUTH_URL` matches your dev URL exactly |
-| Image upload fails | Check all 5 Cloudinary env variables are set |
-| "Unknown field" Prisma errors | Run `npx prisma db push` then `npx prisma generate` |
-| Port 3000 in use | Use `npm run dev -- -p 3001` |
+1. Sign up at [cloudinary.com](https://cloudinary.com)
+2. From the Dashboard, copy:
+   - Cloud Name
+   - API Key
+   - API Secret
+3. Set both server-side and client-side variables in `.env`
+
+---
+
+## Database Setup (Supabase)
+
+1. Create project at [supabase.com](https://supabase.com)
+2. Go to **Settings** → **Database**
+3. Copy:
+   - **Connection string (Pooler):** Use for `DATABASE_URL` (port 6543, append `?pgbouncer=true`)
+   - **Connection string (Direct):** Use for `DIRECT_URL` (port 5432)
+4. Run `npx prisma db push` to create tables
+
+---
+
+## Prisma Commands Reference
+
+```bash
+npx prisma generate        # Generate Prisma Client
+npx prisma db push          # Push schema changes to DB
+npx prisma db pull          # Pull schema from existing DB
+npx prisma migrate dev      # Create and apply migration
+npx prisma migrate deploy   # Apply pending migrations
+npx prisma studio           # Open visual DB editor (localhost:5555)
+npx prisma db seed          # Run seed script
+```

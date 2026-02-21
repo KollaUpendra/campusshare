@@ -1,41 +1,48 @@
 # CampusShare — Database Schema
 
-## ORM & Database
-
-| Property | Value |
-|---|---|
-| **ORM** | Prisma 5.10.2 |
-| **Database** | PostgreSQL (Supabase) |
-| **Schema File** | `prisma/schema.prisma` |
-| **Connection** | Pooled via PgBouncer (`DATABASE_URL`, port 6543) |
-| **Direct Connection** | `DIRECT_URL` (port 5432, for migrations) |
+> **ORM:** Prisma `5.10.2` | **Database:** PostgreSQL (Supabase) | **Schema:** `prisma/schema.prisma`
 
 ---
 
-## Entity Relationship Diagram
+## Connection Configuration
+
+```prisma
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")      // PgBouncer pooled connection (port 6543)
+  directUrl = env("DIRECT_URL")        // Direct connection (port 5432, for migrations)
+}
+```
+
+- **Pooler:** Supabase PgBouncer on port `6543` (used at runtime)
+- **Direct:** Port `5432` (used for `prisma migrate` and `prisma db push`)
+
+---
+
+## Entity-Relationship Diagram
 
 ```mermaid
 erDiagram
     User ||--o{ Account : has
     User ||--o{ Session : has
     User ||--o{ Item : owns
-    User ||--o{ Booking : "borrows"
+    User ||--o{ Booking : "borrows (UserBookings)"
     User ||--o{ Notification : receives
-    User ||--o{ Transaction : "sends (from)"
-    User ||--o{ Transaction : "receives (to)"
+    User ||--o{ Transaction : "sends (SentTransactions)"
+    User ||--o{ Transaction : "receives (ReceivedTransactions)"
     User ||--o{ Complaint : files
-    User ||--o{ AdminActionLog : "performs (admin)"
-    User ||--o{ AdminActionLog : "target of"
+    User ||--o{ AdminActionLog : "performs (AdminActions)"
+    User ||--o{ AdminActionLog : "targeted by (AdminTargetUser)"
     User ||--o{ DepositRequest : requests
 
-    Item ||--o{ Availability : "available on"
-    Item ||--o{ Booking : "booked via"
+    Item ||--o{ Availability : has
+    Item ||--o{ Booking : "is booked"
     Item ||--o{ Transaction : "involved in"
 
-    Booking ||--o{ Complaint : "complained about"
+    Booking ||--o{ Complaint : "has complaints"
 
     User {
-        string id PK
+        string id PK "cuid()"
         string name
         string email UK
         datetime emailVerified
@@ -43,7 +50,7 @@ erDiagram
         string role "default: student"
         boolean isBlocked "default: false"
         float pendingFine "default: 0"
-        float coins "default: 200"
+        float coins "default: 200.0"
         string bio
         string phoneNumber
         string year
@@ -180,156 +187,108 @@ erDiagram
 
     SystemSettings {
         string id PK
-        float rentServiceChargePercent "default: 0"
-        float sellServiceChargePercent "default: 0"
+        float rentServiceChargePercent "default: 0.0"
+        float sellServiceChargePercent "default: 0.0"
         datetime updatedAt
     }
 ```
 
 ---
 
-## Table Details
+## Model Details
 
 ### User
-| Field | Type | Constraints | Notes |
+
+| Field | Type | Constraints | Purpose |
 |---|---|---|---|
-| id | String | PK, CUID | Auto-generated |
-| name | String? | | Google profile name |
-| email | String? | Unique | Google email |
-| emailVerified | DateTime? | | Set by NextAuth |
-| image | String? | | Google profile pic URL |
-| role | String | Default: `"student"` | `"student"` or `"admin"` |
-| isBlocked | Boolean | Default: `false` | Admin-toggled block |
-| pendingFine | Float | Default: `0` | Unfulfilled fine amount |
-| coins | Float | Default: `200.0` | Virtual currency balance |
-| bio | String? | | User bio text |
-| phoneNumber | String? | | Contact number |
-| year | String? | | Academic year |
-| branch | String? | | Academic branch |
-| section | String? | | Academic section |
-| address | String? | | Address |
-| createdAt | DateTime | Default: `now()` | Registration timestamp |
+| `id` | `String` | PK, `cuid()` | Primary key |
+| `name` | `String?` | — | Display name |
+| `email` | `String?` | Unique | Login email (from Google OAuth) |
+| `emailVerified` | `DateTime?` | — | OAuth verification timestamp |
+| `image` | `String?` | — | Profile picture URL (Google/Cloudinary) |
+| `role` | `String` | Default: `"student"` | `"student"` or `"admin"` |
+| `isBlocked` | `Boolean` | Default: `false` | Admin can block users |
+| `pendingFine` | `Float` | Default: `0` | Accumulated unpaid fines |
+| `coins` | `Float` | Default: `200.0` | Virtual currency balance |
+| `bio` | `String?` | — | User biography |
+| `phoneNumber` | `String?` | — | Contact number |
+| `year` | `String?` | — | Academic year |
+| `branch` | `String?` | — | Academic branch/department |
+| `section` | `String?` | — | Class section |
+| `address` | `String?` | — | Physical address/room |
+| `createdAt` | `DateTime` | Default: `now()` | Account creation time |
 
-### Item
-| Field | Type | Constraints | Notes |
-|---|---|---|---|
-| id | String | PK, CUID | |
-| title | String | Required | Max 200 chars (API-enforced) |
-| description | String | Required | Max 2000 chars (API-enforced) |
-| price | Float | Required | Per-day rental or sale price in coins |
-| status | String | Default: `"active"` | `active`, `AVAILABLE`, `PENDING`, `BOOKED`, `sold`, `COMPLETED`, `EXPIRED` |
-| ownerId | String | FK → User | Cascade delete |
-| image | String? | | Legacy single image URL |
-| images | String[] | | Array of Cloudinary URLs |
-| category | String | Default: `"Other"` | Item category |
-| condition | String | Default: `"Used"` | Item condition |
-| type | String | Default: `"Rent"` | `"Rent"` or `"Sell"` |
-| date | String? | | Specific date (YYYY-MM-DD) |
-| rentCoins | Float | Default: `0` | Rental coin amount |
-| timeSlot | String? | | Time slot for rental |
-| availableFrom | String? | | Start of availability window |
-| availableUntil | String? | | End of availability window |
-| rentalDuration | String? | | Duration label |
-
-### Booking
-| Field | Type | Constraints | Notes |
-|---|---|---|---|
-| id | String | PK, CUID | |
-| itemId | String | FK → Item | Cascade delete |
-| borrowerId | String | FK → User | Cascade delete |
-| date | String? | | Legacy single date |
-| startDate | String? | | Rental start (YYYY-MM-DD) |
-| endDate | String? | | Rental end (YYYY-MM-DD) |
-| status | String | Default: `"pending"` | See Booking Status Flow below |
-| totalPrice | Float? | | Calculated: price × days |
-| timeSlot | String? | | Time slot |
-| pickupLocation | String? | | Set on accept |
-| isReceived | Boolean | Default: `false` | Return flow: borrower confirms |
-| isReturned | Boolean | Default: `false` | Return flow: owner confirms |
-
-### Booking Status Flow
-
-```
-PENDING → ACCEPTED → COMPLETED (Paid) → RECEIVED → RETURN_FLOW
-                                                         │
-                                    ┌────────────────────┤
-                                    ▼                    ▼
-                        PENDING_OWNER_     PENDING_BORROWER_
-                        CONFIRMATION       CONFIRMATION
-                                    │                    │
-                                    └────────┬───────────┘
-                                             ▼
-                                        SUCCESSFUL
-                                    (Item → active again)
-
-PENDING → REJECTED (Item → AVAILABLE)
-PENDING → EXPIRED (date passed)
-ACCEPTED/COMPLETED → CANCELLED (admin rollback)
-```
-
-### Transaction
-| Type Values | Description |
-|---|---|
-| `RENT_PAYMENT` | Renter pays for rental |
-| `PURCHASE` | Buyer purchases item |
-| `REFUND` | Admin rollback refund |
-| `FINE` | Admin fine transfer |
-| `WITHDRAWAL` | User coin withdrawal |
-| `DEPOSIT` | User coin deposit |
-
-### Indexes
-| Table | Index | Type |
-|---|---|---|
-| Account | `[provider, providerAccountId]` | Unique composite |
-| Session | `sessionToken` | Unique |
-| User | `email` | Unique |
-| Availability | `[itemId, dayOfWeek]` | Unique composite |
-| DepositRequest | `userId` | Index |
+**Delete Behavior:** Cascades to `Account`, `Session`, `Item`, `Booking`, `Notification`, `Complaint`, `DepositRequest`
 
 ---
 
-## Data Flow
+### Item
 
-```
-UI (Client Component)
-    │
-    ▼ fetch('/api/...')
-API Route Handler
-    │
-    ▼ getServerSession() → Auth Check
-    │
-    ▼ db.model.findMany/create/update/delete
-Prisma Client
-    │
-    ▼ SQL Query
-PostgreSQL (Supabase)
-    │
-    ▼ Result rows
-Prisma Client
-    │
-    ▼ Typed objects
-API Route Handler
-    │
-    ▼ NextResponse.json()
-UI (setState → re-render)
-```
+| Field | Type | Constraints | Purpose |
+|---|---|---|---|
+| `id` | `String` | PK, `cuid()` | Primary key |
+| `title` | `String` | Required | Item name |
+| `description` | `String` | Required | Detailed description |
+| `price` | `Float` | Required | Cost in coins (per day for rent, total for sell) |
+| `status` | `String` | Default: `"active"` | `active`, `AVAILABLE`, `PENDING`, `BOOKED`, `COMPLETED`, `EXPIRED`, `sold` |
+| `ownerId` | `String` | FK → User | Item owner |
+| `image` | `String?` | — | Legacy single thumbnail |
+| `images` | `String[]` | — | Multiple image URLs (Cloudinary) |
+| `category` | `String` | Default: `"Other"` | Item category |
+| `condition` | `String` | Default: `"Used"` | Physical condition |
+| `type` | `String` | Default: `"Rent"` | `"Rent"` or `"Sell"` |
+| `date` | `String?` | — | Specific availability date |
+| `rentCoins` | `Float` | Default: `0` | Rent cost in coins |
+| `timeSlot` | `String?` | — | Available time slot |
+| `availableFrom` | `String?` | — | Start of availability window |
+| `availableUntil` | `String?` | — | End of availability window |
+| `rentalDuration` | `String?` | — | Duration label |
 
-### Coin Transfer Flow (Payment)
+---
 
-```
-Renter clicks "Pay"
-    │
-    ▼
-POST /api/bookings/[id]/pay
-    │
-    ▼ db.$transaction()
-    │   1. user.update(renter, decrement: cost)
-    │   2. systemSettings.findFirst() → service charge %
-    │   3. user.update(owner, increment: cost - serviceCharge)
-    │   4. transaction.create(RENT_PAYMENT, platformFee: serviceCharge)
-    │   5. booking.updateMany(status → COMPLETED)
-    │   6. item.update(status → BOOKED or sold)
-    │   7. notification.create(owner)
-    │
-    ▼ JSON response
+### Booking
+
+| Field | Type | Constraints | Purpose |
+|---|---|---|---|
+| `status` | `String` | Default: `"pending"` | See booking lifecycle below |
+| `isReceived` | `Boolean` | Default: `false` | Borrower confirmed receipt |
+| `isReturned` | `Boolean` | Default: `false` | Borrower confirmed return |
+| `totalPrice` | `Float?` | — | Calculated rental cost |
+| `pickupLocation` | `String?` | — | Set by owner on acceptance |
+
+**Status Values:** `pending`/`PENDING`, `ACCEPTED`, `REJECTED`, `COMPLETED`, `RECEIVED`, `RETURN_FLOW`, `PENDING_OWNER_CONFIRMATION`, `PENDING_BORROWER_CONFIRMATION`, `SUCCESSFUL`, `EXPIRED`, `CANCELLED`
+
+---
+
+### Transaction
+
+| Field | Type | Purpose |
+|---|---|---|
+| `type` | `String` | `PURCHASE`, `RENT_PAYMENT`, `REFUND`, `FINE`, `DEPOSIT`, `WITHDRAWAL` |
+| `status` | `String` | Default: `COMPLETED` |
+| `platformFee` | `Float` | Service charge deducted |
+| `referenceId` | `String?` | Links to booking/complaint ID |
+| `balanceAfter` | `Float?` | User balance post-transaction |
+
+---
+
+### Indexes & Constraints
+
+| Model | Index/Constraint | Fields |
+|---|---|---|
+| `Account` | Unique composite | `[provider, providerAccountId]` |
+| `Session` | Unique | `sessionToken` |
+| `User` | Unique | `email` |
+| `Availability` | Unique composite | `[itemId, dayOfWeek]` |
+| `DepositRequest` | Index | `userId` |
+
+---
+
+## Seed Script
+
+File: `prisma/seed.ts`
+
+Creates initial data for development testing. Run via:
+```bash
+npx prisma db seed
 ```

@@ -1,412 +1,520 @@
 # CampusShare — API Reference
 
+> **Base URL:** `http://localhost:3000/api` | **Auth:** NextAuth JWT via `getServerSession(authOptions)`
+
+---
+
 ## Authentication
 
-All API endpoints (except `/api/auth/*` and `GET /api/items`) require authentication via NextAuth JWT session.  
-Each handler calls `getServerSession(authOptions)` and returns `401 Unauthorized` if no session exists.
+### `GET|POST /api/auth/[...nextauth]`
 
-### Base URL
-```
-http://localhost:3000/api
+NextAuth catch-all handler. Manages OAuth sign-in, sign-out, session, CSRF, and callback flows.
+
+- **Provider:** Google OAuth
+- **Login URL:** `/api/auth/signin` (redirects to `/auth/signin` custom page)
+- **Callback URL:** `/api/auth/callback/google`
+- **Session URL:** `/api/auth/session`
+
+---
+
+## Items
+
+### `GET /api/items`
+
+Fetch active rental/sell items with optional search.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `query` | Query string | No | Search term (title/description) |
+
+**Auth:** Not required (public)  
+**Side Effects:** Calls `processExpirations()` to expire stale bookings  
+
+**Response:**
+```json
+[
+  {
+    "id": "clxyz...",
+    "title": "Graphing Calculator",
+    "description": "TI-84 Plus, great condition",
+    "price": 50,
+    "status": "active",
+    "type": "Rent",
+    "category": "Electronics",
+    "condition": "Used",
+    "images": ["https://res.cloudinary.com/.../image.jpg"],
+    "rentCoins": 0,
+    "date": null,
+    "timeSlot": null,
+    "availableFrom": null,
+    "availableUntil": null,
+    "rentalDuration": null,
+    "availability": [{ "dayOfWeek": "Monday" }, { "dayOfWeek": "Wednesday" }],
+    "owner": { "name": "John", "image": "https://..." },
+    "createdAt": "2026-02-01T00:00:00.000Z"
+  }
+]
 ```
 
 ---
 
-## Auth Routes
+### `POST /api/items`
 
-### `GET/POST /api/auth/[...nextauth]`
-NextAuth catch-all handler. Manages sign-in, sign-out, session, CSRF, callbacks.
+Create a new item listing.
 
----
-
-## Items API
-
-### `POST /api/items` — Create Item
-| Property | Detail |
-|---|---|
-| **Auth** | Required (student/admin) |
-| **Blocked Check** | Yes |
+**Auth:** Required (any authenticated user)  
+**Blocked User Check:** Yes
 
 **Request Body:**
 ```json
 {
-  "title": "Graphing Calculator",
-  "description": "TI-84 Plus in great condition",
-  "price": 50,
-  "availability": ["Monday", "Wednesday", "Friday"],
-  "images": ["https://res.cloudinary.com/..."],
-  "category": "Electronics",
-  "condition": "Like New",
+  "title": "Camping Tent",
+  "description": "4-person tent, waterproof",
+  "price": 100,
   "type": "Rent",
-  "rentCoins": 50,
-  "date": "2026-03-01",
-  "timeSlot": "Morning",
-  "rentalDuration": "1 week",
+  "category": "Sports",
+  "condition": "Like New",
+  "images": ["https://res.cloudinary.com/.../image.jpg"],
+  "availability": ["Monday", "Tuesday", "Saturday"],
   "availableFrom": "2026-03-01",
   "availableUntil": "2026-06-30"
 }
 ```
 
-**Response (201):**
-```json
-{
-  "id": "clxx123...",
-  "title": "Graphing Calculator",
-  "price": 50,
-  "status": "active",
-  "ownerId": "user_id",
-  "images": ["https://res.cloudinary.com/..."],
-  ...
-}
-```
-
-**Validations:**
-- `title` required, max 200 chars
-- `price` required
-- `availability` required, array of valid day names
-- `description` max 2000 chars
+**Response:** `201` — Created item object  
+**Errors:** `400` (missing fields), `401` (unauthorized), `403` (blocked)
 
 ---
 
-### `GET /api/items` — List Items
-| Property | Detail |
-|---|---|
-| **Auth** | Not required |
-| **Query Params** | `query` (optional search string) |
+### `PUT /api/items`
 
-**Side Effect:** Calls `processExpirations()` on every request.
+Update an existing item.
 
-**Response:** Array of items with `status IN ['active', 'AVAILABLE']`, filtered by date expiry. Includes `availability[]` and `owner { name, image }`.
-
----
-
-### `PUT /api/items` — Update Item
-| Property | Detail |
-|---|---|
-| **Auth** | Required (owner only) |
-
-**Request Body:** Same fields as POST, plus `id` (required) and `status`.
-
----
-
-### `DELETE /api/items?id=xxx` — Delete Item
-| Property | Detail |
-|---|---|
-| **Auth** | Required (owner only) |
-
----
-
-### `GET /api/items/[id]` — Get Single Item
-| Property | Detail |
-|---|---|
-| **Auth** | Not required |
-
-**Response:** Item with `availability[]` and `owner { id, name, image }`.
-
----
-
-### `PATCH /api/items/[id]` — Patch Item
-| Property | Detail |
-|---|---|
-| **Auth** | Required (owner only) |
-
-**Request Body:** `{ title, description, price, availability, status }`
-
----
-
-### `DELETE /api/items/[id]` — Delete Item by Path
-| Property | Detail |
-|---|---|
-| **Auth** | Required (owner only) |
-
----
-
-## Bookings API
-
-### `POST /api/bookings` — Create Booking Request
-| Property | Detail |
-|---|---|
-| **Auth** | Required |
-| **Blocked Check** | Yes |
+**Auth:** Required (owner only)  
 
 **Request Body:**
 ```json
 {
-  "itemId": "clxx123...",
+  "id": "clxyz...",
+  "title": "Updated Title",
+  "description": "Updated description",
+  "price": 75,
+  "category": "Electronics",
+  "condition": "Good",
+  "images": ["https://..."],
+  "availability": ["Monday", "Friday"],
+  "availableFrom": "2026-04-01",
+  "availableUntil": "2026-07-31"
+}
+```
+
+---
+
+### `DELETE /api/items`
+
+Delete an item listing.
+
+**Auth:** Required (owner only)  
+
+**Request Body:**
+```json
+{ "id": "clxyz..." }
+```
+
+---
+
+### `GET /api/items/[id]`
+
+Fetch single item details.
+
+**Auth:** Not required  
+**Response:** Full item object with owner, availability, and bookings
+
+### `DELETE /api/items/[id]`
+
+Delete a specific item by ID.
+
+**Auth:** Required (owner only)
+
+---
+
+## Bookings
+
+### `POST /api/bookings`
+
+Create a new booking request.
+
+**Auth:** Required  
+**Blocked User Check:** Yes  
+
+**Request Body:**
+```json
+{
+  "itemId": "clxyz...",
   "date": "2026-03-15",
+  "timeSlot": "10:00-12:00",
   "startDate": "2026-03-15",
-  "endDate": "2026-03-17",
-  "timeSlot": "Afternoon"
+  "endDate": "2026-03-17"
 }
 ```
 
 **Validations:**
+- Date format must be `YYYY-MM-DD`
 - Cannot book own item
 - Item must be `active` or `AVAILABLE`
-- Date format: `YYYY-MM-DD`
-- Day-of-week must match item availability
-- No overlapping bookings
-- Total price = `item.price × number_of_days`
+- User must not already have pending booking for same item + date
+- Checks profile completion (`isProfileComplete()`)
+- Minimum balance check (50 coins)
 
-**Side Effects:**
-- Creates Booking (status: `PENDING`)
-- Updates Item status → `PENDING`
-- Creates Notification for owner
+**Side Effects:** Creates notification for item owner, updates item status to `PENDING`
 
----
-
-### `GET /api/bookings` — List User Bookings
-| Property | Detail |
-|---|---|
-| **Auth** | Required |
-| **Query Params** | `type=incoming` (requests for my items) or default (my booking requests) |
+**Response:** `201` — Booking object  
+**Errors:** `400` (validation), `401`, `403` (blocked), `409` (duplicate)
 
 ---
 
-### `PATCH /api/bookings/[id]` — Update Booking Status (Legacy)
-| Property | Detail |
-|---|---|
-| **Auth** | Required (item owner only) |
+### `GET /api/bookings`
 
-**Request Body:** `{ "status": "accepted" | "rejected" }`
+Fetch bookings for current user.
 
----
+**Auth:** Required  
 
-### `POST /api/bookings/[id]/accept` — Accept Booking
-| Property | Detail |
-|---|---|
-| **Auth** | Required (item owner only) |
-| **Blocked Check** | Yes |
-
-**Request Body (optional):** `{ "pickupLocation": "Library entrance" }`
-
-**Side Effects:**
-- Booking status → `ACCEPTED`
-- Notification to borrower with pickup info
+| Parameter | Type | Description |
+|---|---|---|
+| `type` | Query | `"incoming"` — bookings FOR user's items; omit for bookings BY user |
 
 ---
 
-### `POST /api/bookings/[id]/reject` — Reject Booking
-| Property | Detail |
-|---|---|
-| **Auth** | Required (item owner only) |
-| **Blocked Check** | Yes |
+### `POST /api/bookings/[id]/accept`
 
-**Side Effects:**
-- Booking → `REJECTED`
-- Item → `AVAILABLE`
-- Notification to borrower
+Owner accepts a pending booking.
+
+**Auth:** Required (item owner only)  
+**Blocked User Check:** Yes  
+
+**Request Body:**
+```json
+{ "pickupLocation": "Library entrance" }
+```
+
+**Side Effects:** Booking → `ACCEPTED`, notification sent to borrower
 
 ---
 
-### `POST /api/bookings/[id]/pay` — Pay for Booking
-| Property | Detail |
-|---|---|
-| **Auth** | Required (borrower only) |
+### `POST /api/bookings/[id]/reject`
 
-**Preconditions:** Booking must be `ACCEPTED`. Borrower must have sufficient coins.
+Owner rejects a pending booking.
 
-**Atomic Transaction:**
-1. Deduct coins from borrower
-2. Fetch system service charge %
+**Auth:** Required (item owner only)  
+**Blocked User Check:** Yes  
+
+**Side Effects (atomic):** Booking → `REJECTED`, Item → `AVAILABLE`, notification to borrower
+
+---
+
+### `POST /api/bookings/[id]/pay`
+
+Borrower pays for an accepted booking (coin transfer).
+
+**Auth:** Required (borrower only)  
+
+**Process (atomic `$transaction`):**
+1. Deduct cost from borrower
+2. Calculate service charge from `SystemSettings`
 3. Credit owner (cost − service charge)
-4. Create Transaction record (`RENT_PAYMENT` or `PURCHASE`)
+4. Create `Transaction` record (type: `RENT_PAYMENT` or `PURCHASE`)
 5. Booking → `COMPLETED`
 6. Item → `BOOKED` (rent) or `sold` (sell)
 7. Notify owner
 
-**Response:**
-```json
-{
-  "id": "booking_id",
-  "status": "COMPLETED",
-  ...
-}
-```
+**Errors:** `400` (insufficient coins, wrong booking state)
 
 ---
 
-### `POST /api/bookings/[id]/status` — Update Booking Status (Return Flow)
-| Property | Detail |
-|---|---|
-| **Auth** | Required (borrower or owner) |
+### `POST /api/bookings/[id]/status`
+
+Manage post-payment booking lifecycle.
+
+**Auth:** Required (borrower or owner depending on action)  
 
 **Request Body:**
 ```json
-{ "status": "RECEIVED" }
-```
-or
-```json
-{ "status": "RETURN_FLOW", "action": "conf_returned" | "conf_received" }
+{ "status": "RECEIVED" | "RETURN_FLOW", "action": "conf_returned" | "conf_received" }
 ```
 
 **Status Transitions:**
-- `RECEIVED` — borrower confirms receipt (requires `COMPLETED` status)
-- `RETURN_FLOW` + `conf_returned` — borrower confirms return
-- `RETURN_FLOW` + `conf_received` — owner confirms receipt of returned item
-- Both confirmed → `SUCCESSFUL` (item → `active` for Rent type)
+- `RECEIVED` — Borrower confirms item receipt (from `COMPLETED`)
+- `RETURN_FLOW` with `conf_returned` — Borrower confirms returned
+- `RETURN_FLOW` with `conf_received` — Owner confirms received back
+- When both flags true → `SUCCESSFUL`, item → `active`
 
 ---
 
-## Complaints API
+### `PATCH /api/bookings/[id]`
 
-### `POST /api/complaints` — File Complaint
-| Property | Detail |
-|---|---|
-| **Auth** | Required (booking participant) |
-| **Blocked Check** | Yes |
+Legacy accept/reject handler (uses `status: "accepted" | "rejected"`).
+
+**Auth:** Required (item owner only)
+
+---
+
+## Transactions
+
+### `POST /api/transactions/buy`
+
+Direct purchase of a "Sell" type item.
+
+**Auth:** Required  
+
+**Request Body:**
+```json
+{ "itemId": "clxyz..." }
+```
+
+**Process (atomic):**
+1. Verify item is `active` and type `Sell`
+2. Check buyer has enough coins
+3. Deduct from buyer, credit seller (minus service charge)
+4. Item → `sold`
+5. Create `PURCHASE` transaction record
+
+---
+
+## Complaints
+
+### `POST /api/complaints`
+
+File a complaint against a booking.
+
+**Auth:** Required (borrower or owner of the booking)  
+**Blocked User Check:** Yes  
 
 **Request Body:**
 ```json
 {
-  "bookingId": "clxx...",
+  "bookingId": "clxyz...",
   "description": "Item was damaged when received"
 }
 ```
 
 **Validations:**
 - Booking must be `ACCEPTED` or `COMPLETED`
-- No duplicate complaints per user per booking
-- Description max 2000 chars
+- Max 2000 character description
+- One complaint per user per booking
 
 ---
 
-## Transactions API
+## Notifications
 
-### `POST /api/transactions/buy` — Direct Purchase
-| Property | Detail |
-|---|---|
-| **Auth** | Required |
+### `GET /api/notifications`
 
-**Request Body:** `{ "itemId": "clxx..." }`
+Fetch latest 20 notifications for current user.
 
-**Atomic Transaction:**
-1. Verify item is `active` and type `Sell`
-2. Deduct buyer coins
-3. Calculate service charge
-4. Credit seller (minus service charge)
-5. Item → `sold`
-6. Create Transaction record
+**Auth:** Required  
+**Response:** Array of `{ id, message, isRead, createdAt }`
 
 ---
 
-## Notifications API
+## User
 
-### `GET /api/notifications` — Get Recent Notifications
-| Property | Detail |
-|---|---|
-| **Auth** | Required |
-| **Limit** | 20 most recent |
+### `PUT /api/user/profile`
 
----
+Update user profile fields.
 
-## User API
-
-### `PUT /api/user/profile` — Update Profile
-| Property | Detail |
-|---|---|
-| **Auth** | Required |
+**Auth:** Required  
 
 **Request Body:**
 ```json
 {
   "name": "John Doe",
   "bio": "CS student",
-  "phoneNumber": "9876543210",
-  "year": "3rd Year",
+  "phoneNumber": "+91...",
+  "year": "3rd",
   "branch": "CSE",
   "section": "A",
-  "address": "Room 101, Hostel Block A",
+  "address": "Room 204, Hostel B",
   "image": "https://res.cloudinary.com/..."
 }
 ```
 
-### `POST /api/user/deposits` — Request Deposit/Withdrawal
-| Property | Detail |
-|---|---|
-| **Auth** | Required |
+---
+
+### `GET /api/user/deposits`
+
+Fetch user's deposit/withdrawal requests.
+
+**Auth:** Required
+
+### `POST /api/user/deposits`
+
+Submit a deposit or withdrawal request.
+
+**Auth:** Required  
 
 **Request Body (Withdrawal):**
 ```json
-{
-  "amount": 100,
-  "upiId": "user@upi",
-  "type": "WITHDRAWAL"
-}
+{ "amount": 50, "upiId": "user@upi", "type": "WITHDRAWAL" }
 ```
 
 **Request Body (Deposit):**
 ```json
-{
-  "amount": 100,
-  "transactionId": "TXN123456",
-  "type": "DEPOSIT"
-}
+{ "amount": 100, "transactionId": "TXN123", "type": "DEPOSIT", "message": "Payment via UPI" }
 ```
 
-### `GET /api/user/deposits` — List My Deposit Requests
+---
 
-### `GET /api/user/my-rentals` — List My Active Rentals
+### `GET /api/user/my-rentals`
+
+Fetch user's active rental bookings (as borrower).
+
+**Auth:** Required  
+**Response:** Formatted list with item title, image, owner info, status
 
 ---
 
-## Owner API
+### `GET /api/owner/bookings`
 
-### `GET /api/owner/bookings` — List Incoming Bookings for My Items
+Fetch bookings for items owned by current user.
 
----
-
-## Cloudinary API
-
-### `POST /api/sign-cloudinary` — Sign Upload
-**Request Body:** `{ "paramsToSign": { ... } }`  
-**Response:** `{ "signature": "abc123..." }`
+**Auth:** Required
 
 ---
 
-## Admin API
+### `POST /api/sign-cloudinary`
 
-> All admin routes require `session.user.role === "admin"`.
+Generate a signed upload URL for Cloudinary.
 
-### `GET /api/admin/analytics` — Platform Metrics
-**Response:**
+**Auth:** Required  
+**Response:** `{ signature, timestamp, cloud_name, api_key }`
+
+---
+
+## Admin Endpoints
+
+> All admin endpoints require `session.user.role === "admin"`
+
+### `GET /api/admin/analytics`
+
+Platform metrics: user counts, booking stats, dispute counts, item stats.
+
+---
+
+### `GET /api/admin/bookings`
+
+All bookings with item and borrower details.
+
+---
+
+### `GET /api/admin/users`
+
+All users with counts of items, bookings, complaints.
+
+### `PATCH /api/admin/users`
+
+Toggle user role or block status.
+
+**Request Body:**
 ```json
-{
-  "users": { "total": 150, "blocked": 3, "active": 147 },
-  "bookings": { "activeRentals": 12, "pending": 5, "completed": 45, "cancelled": 2 },
-  "disputes": { "open": 3, "resolved": 10 },
-  "items": { "total": 200, "available": 85 }
-}
+{ "userId": "clxyz...", "action": "toggleRole" | "toggleBlock" }
 ```
 
-### `GET /api/admin/users` — List All Users (with counts)
-### `PATCH /api/admin/users` — Toggle Role or Block
-**Body:** `{ "userId": "...", "action": "toggleRole" | "toggleBlock" }`
+**Safety:** Cannot modify own account.
 
-### `POST /api/admin/user/block/[userId]` — Block User
-### `POST /api/admin/user/unblock/[userId]` — Unblock User
-### `POST /api/admin/users/block` — Bulk Block
+---
 
-### `GET /api/admin/bookings` — List All Bookings
-### `GET /api/admin/items` — List All Items
-### `GET /api/admin/complaints` — List All Complaints
+### `POST /api/admin/user/block/[userId]`
 
-### `GET /api/admin/settings` — Get System Settings
-### `PATCH /api/admin/settings` — Update Service Charges
-**Body:** `{ "rentPercent": 5, "sellPercent": 10 }`
+Block a specific user.
 
-### `GET /api/admin/deposits?status=PENDING&type=WITHDRAWAL` — List Deposit Requests
-### `PUT /api/admin/deposits/[id]` — Approve/Reject Deposit
-**Body:** `{ "status": "APPROVED" | "REJECTED", "adminMessage": "..." }`
+### `POST /api/admin/user/unblock/[userId]`
 
-### `POST /api/admin/booking/rollback/[bookingId]` — Rollback Booking
-Atomically: Refund renter, deduct owner, booking → `CANCELLED`, item → `AVAILABLE`, complaints → `ACTION_TAKEN`.
+Unblock a specific user.
 
-### `POST /api/admin/complaint/fine/[complaintId]` — Apply Fine
-**Body:** `{ "fineCoins": 50 }`  
-Atomically: Deduct from borrower (or add to `pendingFine`), credit owner, create FINE transaction.
+---
 
-### `POST /api/admin/complaint/verify/[id]` — Verify Complaint
-### `POST /api/admin/complaint/reject/[id]` — Reject Complaint
+### `GET /api/admin/complaints`
 
-### `GET /api/admin/transactions/incomplete` — List Incomplete Transactions
+All complaints with booking, item, and complainer details.
+
+### `POST /api/admin/complaint/verify/[id]`
+
+Mark complaint as under review.
+
+### `POST /api/admin/complaint/reject/[id]`
+
+Reject a complaint.
+
+### `POST /api/admin/complaint/fine/[complaintId]`
+
+Apply a coin fine to the borrower.
+
+**Request Body:**
+```json
+{ "fineCoins": 25 }
+```
+
+**Process (atomic):**
+1. Deduct from borrower (up to available coins)
+2. Remaining becomes `pendingFine`
+3. Credit owner
+4. Create `FINE` transaction
+5. Complaint → `ACTION_TAKEN`
+6. Admin action logged
+
+---
+
+### `POST /api/admin/booking/rollback/[bookingId]`
+
+Fully reverse a booking transaction.
+
+**Process (atomic):**
+1. Refund renter (increment coins)
+2. Deduct from owner (protect against negative)
+3. Create `REFUND` transaction
+4. Booking → `CANCELLED`
+5. Item → `AVAILABLE`
+6. Related complaints → `ACTION_TAKEN`
+7. Admin action logged
+8. Both parties notified
+
+---
+
+### `GET /api/admin/deposits`
+
+All deposit/withdrawal requests.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `status` | Query | Filter by status (`PENDING`, `APPROVED`, `REJECTED`) |
+| `type` | Query | Filter by type (`DEPOSIT`, `WITHDRAWAL`) |
+
+### `PATCH /api/admin/deposits/[id]`
+
+Approve or reject a deposit/withdrawal request.
+
+---
+
+### `GET /api/admin/items`
+
+All items for admin oversight.
+
+---
+
+### `GET /api/admin/settings`
+
+Get platform service charge percentages.
+
+### `PATCH /api/admin/settings`
+
+Update service charge percentages.
+
+**Request Body:**
+```json
+{ "rentPercent": 5, "sellPercent": 10 }
+```
+
+---
+
+### `GET /api/admin/transactions/incomplete`
+
+Fetch incomplete/pending transactions for admin review.

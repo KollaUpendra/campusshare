@@ -1,91 +1,108 @@
 # CampusShare — Deployment Guide
 
-## Deployment Options Overview
-
-| Option | Recommended | Effort | Notes |
-|---|---|---|---|
-| **Vercel** | ✅ Yes | Low | Native Next.js platform, zero-config |
-| **Node.js (VPS)** | ⚠️ Possible | Medium | Requires pm2 or systemd |
-| **Docker** | ⚠️ Possible | Medium | No Dockerfile exists (must create) |
-| **Static Export** | ❌ No | N/A | App uses server-side features (API routes, auth) |
-
 ---
 
-## Option 1: Vercel (Recommended)
+## Build Configuration
 
-### Steps
-
-1. **Push to GitHub** (if not already)
-2. **Import project** at https://vercel.com/new
-3. **Set Environment Variables** in Vercel Dashboard → Settings → Environment Variables:
-   - All 12 variables from `.env` (see `ENV_SETUP.md`)
-   - Set `NEXTAUTH_URL` to your production domain (e.g., `https://campusshare.vercel.app`)
-4. **Deploy** — Vercel auto-detects Next.js and runs `npm run build`
-
-### Vercel Configuration Notes
-
-| Setting | Value |
+| Property | Value |
 |---|---|
-| Framework Preset | Next.js (auto-detected) |
-| Build Command | `prisma generate && next build` (from `package.json`) |
-| Output Directory | `.next` (default) |
-| Node.js Version | 20.x |
-| Install Command | `npm install` (runs `postinstall` → `prisma generate`) |
-
-### Google OAuth Redirect URI
-Add production callback:
-```
-https://your-domain.vercel.app/api/auth/callback/google
-```
-
-### Post-Deploy Checklist
-- [ ] Set `NEXTAUTH_URL` to production URL
-- [ ] Add production callback URL to Google Cloud Console
-- [ ] Verify Cloudinary upload works
-- [ ] Rotate `NEXTAUTH_SECRET` from development value
-- [ ] Test sign-in flow end-to-end
+| **Build Command** | `prisma generate && next build` |
+| **Output Mode** | Standalone Node.js server (default) |
+| **Start Command** | `next start` |
+| **Node.js** | ≥ 18.x required |
+| **Port** | `3000` (default) |
 
 ---
 
-## Option 2: Node.js on VPS
+## Deployment Options
 
-### Requirements
-- Node.js 20.x
-- npm 9+
-- PostgreSQL 15+ (or Supabase remote)
-- Reverse proxy (nginx)
-- Process manager (pm2)
+### Option 1: Vercel (Recommended)
 
-### Steps
+Vercel is the native hosting platform for Next.js.
+
+#### Steps
+
+1. **Connect Repository:**
+   - Go to [vercel.com](https://vercel.com) → Import Git Repository
+   - Select the `campusshare` repository
+
+2. **Configure Environment Variables:**
+   - Add all variables from [ENV_SETUP.md](./ENV_SETUP.md)
+   - Set `NEXTAUTH_URL` to your production domain (e.g., `https://campusshare.vercel.app`)
+
+3. **Configure Build Settings:**
+   ```
+   Build Command: prisma generate && next build
+   Output Directory: .next
+   Install Command: npm install
+   ```
+
+4. **Deploy:**
+   - Vercel auto-deploys on push to `main` branch
+   - Preview deployments on pull requests
+
+5. **Post-Deploy:**
+   - Update Google OAuth redirect URI to `https://yourdomain.com/api/auth/callback/google`
+   - Verify `NEXTAUTH_URL` matches the deployed domain exactly
+
+#### Vercel-Specific Notes
+- Serverless functions have a 10s default timeout (upgrade plan for longer)
+- Database connections use PgBouncer (`DATABASE_URL` with `?pgbouncer=true`)
+- `DIRECT_URL` is needed for Prisma migrations (run locally, not on Vercel)
+
+---
+
+### Option 2: Node.js VPS (Self-Hosted)
+
+#### Prerequisites
+- Linux server with Node.js ≥ 18.x
+- PM2 or systemd for process management
+- Nginx as reverse proxy
+- SSL certificate (Let's Encrypt)
+
+#### Steps
 
 ```bash
 # 1. Clone and install
-git clone <repo-url> /opt/campusshare
-cd /opt/campusshare
-npm ci --production
+git clone https://github.com/KollaUpendra/campusshare.git
+cd campusshare
+npm install
 
-# 2. Set environment variables
+# 2. Configure environment
 cp .env.example .env
-nano .env   # Set all production values
+nano .env  # Set all production variables
 
-# 3. Build
+# 3. Generate Prisma Client & push schema
+npx prisma generate
+npx prisma db push
+
+# 4. Build
 npm run build
 
-# 4. Start with pm2
-npm install -g pm2
-pm2 start npm --name campusshare -- start
+# 5. Start with PM2
+pm2 start npm --name "campusshare" -- start
 pm2 save
 pm2 startup
 ```
 
-### Nginx Reverse Proxy
+#### Nginx Configuration
+
 ```nginx
 server {
     listen 80;
-    server_name campusshare.yourdomain.com;
+    server_name yourdomain.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name yourdomain.com;
+
+    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
 
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -100,33 +117,76 @@ server {
 
 ---
 
-## Option 3: Docker
+### Option 3: Docker
 
-> **No Dockerfile exists in the repository.** Below is a recommended Dockerfile.
+> **Note:** No `Dockerfile` or `docker-compose.yml` exists in the repository. Below is a proposed configuration.
+
+#### Dockerfile
 
 ```dockerfile
-FROM node:20-alpine AS builder
+FROM node:18-alpine AS base
+
+# Install dependencies
+FROM base AS deps
 WORKDIR /app
-COPY package*.json ./
+COPY package.json package-lock.json ./
 COPY prisma ./prisma/
 RUN npm ci
 RUN npx prisma generate
+
+# Build
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-FROM node:20-alpine AS runner
+# Production
+FROM base AS runner
 WORKDIR /app
-ENV NODE_ENV=production
+ENV NODE_ENV production
 
+COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
 
 EXPOSE 3000
 CMD ["node", "server.js"]
 ```
 
-> **Note:** To use standalone output, add `output: 'standalone'` to `next.config.mjs`.
+> **Important:** To use Docker standalone mode, add to `next.config.mjs`:
+> ```js
+> output: 'standalone',
+> ```
+
+#### docker-compose.yml
+
+```yaml
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file: .env
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: campusshare
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: your_password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  pgdata:
+```
 
 ---
 
@@ -134,50 +194,58 @@ CMD ["node", "server.js"]
 
 | Service | Purpose | Required |
 |---|---|---|
-| **Supabase / PostgreSQL** | Database | ✅ |
-| **Google Cloud Console** | OAuth sign-in | ✅ |
-| **Cloudinary** | Image storage & CDN | ✅ |
-
----
-
-## Database Migrations
-
-The project uses `prisma db push` (schema-push) rather than migration files:
-
-```bash
-# Sync schema to database
-npx prisma db push
-
-# Generate Prisma client
-npx prisma generate
-```
-
-> ⚠️ For production, consider switching to `prisma migrate deploy` with proper migration files.
+| **Supabase / PostgreSQL** | Primary database | ✅ |
+| **Google Cloud Console** | OAuth authentication | ✅ |
+| **Cloudinary** | Image upload & CDN | ✅ |
+| **DiceBear** | Avatar generation (landing page) | ❌ (decorative only) |
 
 ---
 
 ## Infrastructure Diagram
 
+```mermaid
+graph TB
+    subgraph Internet
+        Client["Browser / Mobile"]
+    end
+
+    subgraph "Hosting (Vercel / VPS)"
+        CDN["CDN / Edge Network"]
+        Server["Next.js Server (Node.js)"]
+    end
+
+    subgraph "Database"
+        PgBouncer["PgBouncer (port 6543)"]
+        PostgreSQL["PostgreSQL (Supabase)"]
+    end
+
+    subgraph "External APIs"
+        Google["Google OAuth"]
+        Cloudinary["Cloudinary (Image CDN)"]
+    end
+
+    Client --> CDN --> Server
+    Server --> PgBouncer --> PostgreSQL
+    Server --> Google
+    Server --> Cloudinary
+    Client --> Cloudinary
 ```
-┌──────────┐      ┌──────────┐      ┌────────────────┐
-│ Browser  │─────►│ CDN/Edge │─────►│  Next.js App   │
-│ (Client) │◄─────│ (Vercel) │◄─────│  (Node.js)     │
-└──────────┘      └──────────┘      └───────┬────────┘
-                                            │
-                          ┌─────────────────┤
-                          │                 │
-                          ▼                 ▼
-                  ┌──────────────┐  ┌──────────────┐
-                  │  PostgreSQL  │  │  Cloudinary   │
-                  │  (Supabase)  │  │  (Images CDN) │
-                  └──────────────┘  └──────────────┘
-                          │
-                          ▼
-                  ┌──────────────┐
-                  │  Google OAuth│
-                  │  (Identity)  │
-                  └──────────────┘
-```
+
+---
+
+## Production Checklist
+
+- [ ] Set `NEXTAUTH_SECRET` to a strong random value (`openssl rand -base64 32`)
+- [ ] Set `NEXTAUTH_URL` to production domain with HTTPS
+- [ ] Update Google OAuth redirect URI to production callback URL
+- [ ] Ensure `DATABASE_URL` uses PgBouncer connection
+- [ ] Run `npx prisma db push` or `npx prisma migrate deploy` against production DB
+- [ ] Verify Cloudinary credentials are correct
+- [ ] Set `NODE_ENV=production`
+- [ ] Remove or rotate any development secrets from `.env`
+- [ ] Configure HTTPS (SSL/TLS)
+- [ ] Set up monitoring and error tracking
+- [ ] Configure backup strategy for PostgreSQL
 
 ---
 
@@ -185,12 +253,11 @@ npx prisma generate
 
 **Status:** Not Found in Codebase
 
-No CI/CD pipeline configuration files (`.github/workflows/`, `vercel.json`, `Dockerfile`, `.gitlab-ci.yml`) were found.
+No CI/CD pipeline configuration files (`.github/workflows/`, `vercel.json`, `Jenkinsfile`, etc.) were found in the repository.
 
-### Recommended CI/CD Pipeline
+### Recommended GitHub Actions Workflow
 
 ```yaml
-# .github/workflows/deploy.yml
 name: Deploy
 on:
   push:
@@ -203,10 +270,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18
       - run: npm ci
+      - run: npx prisma generate
       - run: npm run build
       - run: npx playwright install --with-deps
       - run: npx playwright test
-      # Vercel auto-deploys from GitHub integration
 ```
