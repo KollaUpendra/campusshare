@@ -33,13 +33,13 @@ export interface EditProfileDialogProps {
     forceOpen?: boolean;
 }
 
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 
 export default function EditProfileDialog({ user, forceOpen = false }: EditProfileDialogProps) {
     const { update } = useSession();
     const [open, setOpen] = useState(forceOpen);
     const { toast } = useToast();
-    
+
     useEffect(() => {
         if (forceOpen) {
             setOpen(true);
@@ -66,10 +66,10 @@ export default function EditProfileDialog({ user, forceOpen = false }: EditProfi
             const res = await fetch("/api/user/profile", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     name,
-                    bio, 
-                    phoneNumber, 
+                    bio,
+                    phoneNumber,
                     image: imageUrl,
                     year,
                     branch,
@@ -78,7 +78,19 @@ export default function EditProfileDialog({ user, forceOpen = false }: EditProfi
                 }),
             });
 
-            if (!res.ok) throw new Error("Failed to update profile");
+            if (!res.ok) {
+                const errorText = await res.text();
+                if (res.status === 404 && errorText.includes("User record not found")) {
+                    toast({
+                        variant: "destructive",
+                        title: "Session Expired",
+                        description: "Your account could not be found. Signing you out...",
+                    });
+                    await signOut({ callbackUrl: "/" });
+                    return;
+                }
+                throw new Error(errorText || "Failed to update profile");
+            }
 
             // Refresh session data on client
             await update();
@@ -87,11 +99,11 @@ export default function EditProfileDialog({ user, forceOpen = false }: EditProfi
                 setOpen(false);
             }
             router.refresh();
-        } catch {
+        } catch (error: any) {
             toast({
                 variant: "destructive",
-                title: "Error",
-                description: "Something went wrong while updating your profile.",
+                title: "Error Updating Profile",
+                description: error.message || "Something went wrong while updating your profile.",
             });
         } finally {
             setIsLoading(false);

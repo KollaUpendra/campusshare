@@ -28,26 +28,12 @@ export async function PATCH(req: Request) {
         const body = await req.json();
         const { rentPercent, sellPercent } = body;
 
-        // Upsert ensures we update if exists, or create if not
-        const settings = await db.systemSettings.upsert({
-            where: { id: "default-settings" }, // We'll manage a single row by fixing an ID or finding first
-            update: {
-                rentServiceChargePercent: parseFloat(rentPercent),
-                sellServiceChargePercent: parseFloat(sellPercent),
-            },
-            create: {
-                rentServiceChargePercent: parseFloat(rentPercent),
-                sellServiceChargePercent: parseFloat(sellPercent),
-            }
-        });
-        
-        // Note: For 'upsert' to work with a fixed ID, we need to ensure findFirst logic in GET matches.
-        // Better approach for single-row config:
-        
+        // Find the single configuration row or create it
+
         const existing = await db.systemSettings.findFirst();
-        
+
         if (existing) {
-             await db.systemSettings.update({
+            await db.systemSettings.update({
                 where: { id: existing.id },
                 data: {
                     rentServiceChargePercent: parseFloat(rentPercent),

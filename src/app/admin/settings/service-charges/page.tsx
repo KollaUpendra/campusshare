@@ -34,9 +34,9 @@ export default function ServiceChargesPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ rentPercent, sellPercent }),
             });
-            
+
             if (!res.ok) throw new Error("Failed to save");
-            
+
             toast({
                 title: "Success",
                 description: "System settings saved successfully.",
@@ -64,50 +64,52 @@ export default function ServiceChargesPage() {
                 </Link>
                 <h1 className="text-3xl font-bold">Service Charges</h1>
             </div>
-            
-            <Card>
-                <CardHeader>
-                    <CardTitle>Configure Fees</CardTitle>
+
+            <Card className="rounded-[2rem] border-0 shadow-sm mt-8">
+                <CardHeader className="bg-muted/10 border-b pb-6 pt-8 px-8">
+                    <CardTitle className="text-xl">Configure Fees</CardTitle>
                     <CardDescription>
                         Set the percentage deducted from transactions as platform fees.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="grid gap-2">
-                        <Label htmlFor="rent">Rent Service Charge (%)</Label>
-                        <Input 
-                            id="rent" 
-                            type="number" 
-                            min="0" 
+                <CardContent className="space-y-8 p-8 max-w-2xl">
+                    <div className="grid gap-3">
+                        <Label htmlFor="rent" className="text-sm font-semibold tracking-wide">Rent Service Charge (%)</Label>
+                        <Input
+                            id="rent"
+                            type="number"
+                            min="0"
                             max="100"
                             step="0.1"
-                            value={rentPercent} 
-                            onChange={(e) => setRentPercent(parseFloat(e.target.value))} 
+                            value={rentPercent}
+                            onChange={(e) => setRentPercent(parseFloat(e.target.value))}
+                            className="bg-muted/30 border-muted-foreground/20 h-12 text-lg px-4"
                         />
-                        <p className="text-xs text-muted-foreground">
-                            If an item is rented for 100 coins, the owner receives {100 - rentPercent} coins.
+                        <p className="text-sm text-muted-foreground mt-1">
+                            If an item is rented for 100 coins, the owner receives <span className="font-bold text-foreground">{100 - rentPercent}</span> coins.
                         </p>
                     </div>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="sell">Sell Service Charge (%)</Label>
-                        <Input 
-                            id="sell" 
-                            type="number" 
-                            min="0" 
+                    <div className="grid gap-3">
+                        <Label htmlFor="sell" className="text-sm font-semibold tracking-wide">Sell Service Charge (%)</Label>
+                        <Input
+                            id="sell"
+                            type="number"
+                            min="0"
                             max="100"
                             step="0.1"
-                            value={sellPercent} 
-                            onChange={(e) => setSellPercent(parseFloat(e.target.value))} 
+                            value={sellPercent}
+                            onChange={(e) => setSellPercent(parseFloat(e.target.value))}
+                            className="bg-muted/30 border-muted-foreground/20 h-12 text-lg px-4"
                         />
-                        <p className="text-xs text-muted-foreground">
-                            If an item is sold for 100 coins, the owner receives {100 - sellPercent} coins.
+                        <p className="text-sm text-muted-foreground mt-1">
+                            If an item is sold for 100 coins, the owner receives <span className="font-bold text-foreground">{100 - sellPercent}</span> coins.
                         </p>
                     </div>
 
-                    <Button onClick={handleSave} disabled={saving}>
-                        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        <Save className="mr-2 h-4 w-4" /> Save Changes
+                    <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto h-12 px-8 text-base">
+                        {saving && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+                        <Save className="mr-2 h-5 w-5" /> Save Changes
                     </Button>
                 </CardContent>
             </Card>

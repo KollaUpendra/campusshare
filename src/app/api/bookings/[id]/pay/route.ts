@@ -91,25 +91,8 @@ export async function POST(
                 data: { coins: { increment: ownerPayout } }
             });
 
-            // 3. Create Transaction Records
-            // Debit
+            // 3. Create Transaction Record
             await tx.transaction.create({
-                // @ts-ignore: We omit platformFee to bypass outdated Prisma client validation
-                data: {
-                    amount: -cost,
-                    type: item.type === 'Sell' ? 'PURCHASE' : 'RENT_PAYMENT',
-                    fromUserId: renter.id,
-                    toUserId: item.ownerId,
-                    itemId: item.id,
-                    referenceId: bookingId,
-                    balanceAfter: updatedRenter.coins,
-                    status: "COMPLETED"
-                }
-            });
-
-            // Credit
-            await tx.transaction.create({
-                // @ts-ignore: We omit platformFee to bypass outdated Prisma client validation
                 data: {
                     amount: cost,
                     type: item.type === 'Sell' ? 'PURCHASE' : 'RENT_PAYMENT',
@@ -117,7 +100,7 @@ export async function POST(
                     toUserId: item.ownerId,
                     itemId: item.id,
                     referenceId: bookingId,
-                    balanceAfter: updatedOwner.coins,
+                    platformFee: serviceCharge,
                     status: "COMPLETED"
                 }
             });

@@ -1,0 +1,41 @@
+# Design System Spec
+
+This specification outlines the redesign strategy for CampusShare, aiming for a premium, dynamic, and modern look while utilizing the existing Tailwind CSS and shadcn/ui foundation.
+
+## 1. Color System (Tokens)
+We will move away from default generic colors to a highly curated, vibrant, and trustworthy palette (resembling modern fintech/social platforms).
+
+- **Primary**: A vibrant, energetic Brand Blue (`#4F46E5` / Indigo-600) to signify trust and action.
+- **Primary Foreground**: White (`#FFFFFF`).
+- **Background**: Off-white/pearl for light mode (`#F9FAFB` / Gray-50) rather than pure white, to make pure-white cards pop.
+- **Surface/Card**: Pure White (`#FFFFFF`) with subtle, refined shadows.
+- **Muted/Secondary**: Soft gray (`#F3F4F6` / Gray-100) for pills, badges, and secondary buttons.
+- **Accent**: A warm accent (like Coral or Amber) for highlights (e.g., "Premium", "Hot Item", or the Price tag).
+- **Text**: Deep slate (`#0F172A` / Slate-900) for high readability, not pure black.
+
+*Implementation: Update CSS variables in [globals.css](file:///c:/Upendra/Git%20Hub/Git%20Hub%20--%20Kolla%20Upendra/campusshare/src/app/globals.css) using HSL values corresponding to these hex codes.*
+
+## 2. Typography Scale
+Moving from default `Inter` to a more geometric, modern font if possible (e.g., `Outfit`, `Plus Jakarta Sans`, or sticking to highly-styled `Inter` with tight tracking).
+- **Display (H1)**: 4xl to 6xl, font-extrabold, tracking-tight (`-0.02em`).
+- **Headings (H2/H3)**: 2xl to 3xl, font-bold.
+- **Body**: Base (16px) and sm (14px), font-regular, leading-relaxed (`1.6`).
+- **Micro**: xs (12px), font-medium, uppercase tracking-wider for badges and tiny labels.
+
+## 3. Spacing Scale & Layout System
+- **Layout Container**: Max width `max-w-5xl` for desktop to keep content focused.
+- **Gaps**: Use `gap-6` and `gap-8` (24px, 32px) for larger sections to let the UI breathe.
+- **Padding**: Cards will use `p-6` universally. Inputs will use `py-3 px-4` for a larger, more comfortable tap target on mobile.
+- **Border Radius**: Increase roundness for a friendlier, modern feel. Cards: `rounded-2xl` or `rounded-3xl`. Buttons: `rounded-full` or `rounded-xl`.
+
+## 4. Component Design Philosophy
+- **Cards**: Glassmorphism touches (optional) or soft, diffused drop-shadows (`shadow-[0_8px_30px_rgb(0,0,0,0.04)]`) instead of harsh borders.
+- **Buttons**: Primary buttons get a subtle gradient or solid vibrant color with a transform scale on hover (`hover:scale-[1.02] active:scale-95 transition-all`).
+- **Inputs & Forms**: Floating labels or very clean inset borders. Focus states must have an outer glowing ring (`focus-visible:ring-4 focus-visible:ring-primary/20`).
+- **Filters (Mobile)**: Replace standard `<select>` dropdowns with horizontal scrollable "Chips" (segmented controls) for categories.
+
+## 5. Interaction Patterns & Animation
+- **Micro-animations**: Elements should gently fade in and slide up when stepping into view (`animate-in fade-in slide-in-from-bottom-4 duration-500`).
+- **Hover Effects**: Item cards should slightly elevate (`-translate-y-1`) and shadows should deepen. Images should do a smooth, slow scale (`duration-500 ease-out`).
+- **Loading States**: Replace standard spinners with beautiful skeleton loaders that shimmer (`animate-pulse` with a gradient background) mirroring the exact shape of the missing content.
+- **Empty States**: Centered, with a softly colored SVG illustration, a title, a helpful subtitle, and an outlined CTA button.

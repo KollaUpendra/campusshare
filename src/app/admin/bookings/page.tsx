@@ -23,66 +23,66 @@ export default async function AdminBookingsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">Booking Overview</h1>
+            <div className="flex items-center justify-between pb-2">
+                <h1 className="text-2xl font-bold tracking-tight">Booking Overview</h1>
                 <div className="flex gap-2">
-                    <Badge variant="outline">🕓 {pendingCount} Pending</Badge>
-                    <Badge variant="default">✅ {acceptedCount} Accepted</Badge>
-                    <Badge variant="secondary">❌ {rejectedCount} Rejected</Badge>
+                    <Badge variant="secondary" className="bg-amber-100 text-amber-800 hover:bg-amber-200">🕓 {pendingCount} Pending</Badge>
+                    <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-200">✅ {acceptedCount} Accepted</Badge>
+                    <Badge variant="secondary" className="bg-red-100 text-red-800 hover:bg-red-200">❌ {rejectedCount} Rejected</Badge>
                 </div>
             </div>
 
-            <div className="border rounded-lg bg-card overflow-hidden">
+            <div className="bg-card rounded-[2rem] border-0 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                        <thead>
-                            <tr className="bg-muted/50 border-b">
-                                <th className="text-left p-3 font-medium">Item</th>
-                                <th className="text-left p-3 font-medium">Owner</th>
-                                <th className="text-left p-3 font-medium">Borrower</th>
-                                <th className="text-left p-3 font-medium">Date</th>
-                                <th className="text-left p-3 font-medium">Status</th>
-                                <th className="text-left p-3 font-medium">Requested</th>
+                        <thead className="bg-muted/30 text-muted-foreground border-b">
+                            <tr>
+                                <th className="text-left p-4 px-6 font-semibold tracking-wide">Item</th>
+                                <th className="text-left p-4 px-6 font-semibold tracking-wide">Owner</th>
+                                <th className="text-left p-4 px-6 font-semibold tracking-wide">Borrower</th>
+                                <th className="text-left p-4 px-6 font-semibold tracking-wide">Date</th>
+                                <th className="text-left p-4 px-6 font-semibold tracking-wide">Status</th>
+                                <th className="text-left p-4 px-6 font-semibold tracking-wide">Requested</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-border/50">
                             {bookings.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="p-6 text-center text-muted-foreground">
+                                    <td colSpan={6} className="p-8 text-center text-muted-foreground font-medium">
                                         No bookings yet
                                     </td>
                                 </tr>
                             )}
                             {bookings.map((booking) => (
-                                <tr key={booking.id} className="border-b last:border-0 hover:bg-muted/30">
-                                    <td className="p-3 font-medium">{booking.item.title}</td>
-                                    <td className="p-3">
+                                <tr key={booking.id} className="hover:bg-muted/30 transition-colors">
+                                    <td className="p-4 px-6 font-medium text-foreground whitespace-nowrap">{booking.item.title}</td>
+                                    <td className="p-4 px-6 whitespace-nowrap">
                                         <div>
-                                            <p>{booking.item.owner.name || "Unnamed"}</p>
+                                            <p className="font-medium text-foreground">{booking.item.owner.name || "Unnamed"}</p>
                                             <p className="text-xs text-muted-foreground">{booking.item.owner.email}</p>
                                         </div>
                                     </td>
-                                    <td className="p-3">
+                                    <td className="p-4 px-6 whitespace-nowrap">
                                         <div>
-                                            <p>{booking.borrower.name || "Unnamed"}</p>
+                                            <p className="font-medium text-foreground">{booking.borrower.name || "Unnamed"}</p>
                                             <p className="text-xs text-muted-foreground">{booking.borrower.email}</p>
                                         </div>
                                     </td>
-                                    <td className="p-3">{booking.date}</td>
-                                    <td className="p-3">
+                                    <td className="p-4 px-6 text-muted-foreground whitespace-nowrap">{booking.date}</td>
+                                    <td className="p-4 px-6 whitespace-nowrap">
                                         <Badge
-                                            variant={
-                                                booking.status === "accepted"
-                                                    ? "default"
+                                            variant="secondary"
+                                            className={`tracking-wide font-medium ${booking.status === "accepted"
+                                                    ? "bg-green-100 text-green-800 hover:bg-green-100"
                                                     : booking.status === "rejected"
-                                                        ? "destructive"
-                                                        : "secondary"
-                                            }
+                                                        ? "bg-red-100 text-red-800 hover:bg-red-100"
+                                                        : "bg-amber-100 text-amber-800 hover:bg-amber-100"
+                                                }`}
                                         >
-                                            {booking.status}
+                                            {booking.status.toUpperCase()}
                                         </Badge>
                                     </td>
-                                    <td className="p-3 text-xs text-muted-foreground">
+                                    <td className="p-4 px-6 text-xs text-muted-foreground whitespace-nowrap">
                                         {new Date(booking.createdAt).toLocaleDateString()}
                                     </td>
                                 </tr>

@@ -20,14 +20,17 @@ export default function PostItemPage() {
     };
 
     return (
-        <div className="max-w-md mx-auto">
-            <div className="flex items-center gap-2 mb-4">
-                <Button variant="ghost" size="icon" asChild>
+        <div className="max-w-2xl mx-auto pb-10">
+            <div className="flex items-center gap-4 mb-8 pt-4">
+                <Button variant="outline" size="icon" className="h-10 w-10 rounded-full shadow-sm hover:bg-muted" asChild>
                     <Link href="/">
-                        <ArrowLeft className="h-4 w-4" />
+                        <ArrowLeft className="h-5 w-5" />
                     </Link>
                 </Button>
-                <h1 className="text-xl font-bold">Add an Item</h1>
+                <div>
+                    <h1 className="text-3xl font-extrabold tracking-tight">Post an Item</h1>
+                    <p className="text-muted-foreground mt-1 text-sm font-medium">Fill out the details below to list your item on CampusShare.</p>
+                </div>
             </div>
             <AddItemForm cloudinaryConfig={cloudinaryConfig} />
         </div>

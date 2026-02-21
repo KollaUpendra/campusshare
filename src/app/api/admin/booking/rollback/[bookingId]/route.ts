@@ -62,33 +62,20 @@ export async function POST(
                 data: { coins: ownerNewCoins }
             });
 
-            // 3. Create Refund Transaction — Renter Credit
-            await tx.transaction.create({
-                data: {
-                    amount: rentCost,
-                    type: "REFUND",
-                    fromUserId: ownerId,
-                    toUserId: renter.id,
-                    itemId: booking.itemId,
-                    referenceId: bookingId,
-                    balanceAfter: updatedRenter.coins,
-                    status: "COMPLETED"
-                }
-            });
-
-            // 4. Create Refund Transaction — Owner Debit
-            await tx.transaction.create({
-                data: {
-                    amount: -rentCost,
-                    type: "REFUND",
-                    fromUserId: ownerId,
-                    toUserId: renter.id,
-                    itemId: booking.itemId,
-                    referenceId: bookingId,
-                    balanceAfter: updatedOwner.coins,
-                    status: "COMPLETED"
-                }
-            });
+            // 3. Create Refund Transaction
+            if (rentCost > 0) {
+                await tx.transaction.create({
+                    data: {
+                        amount: rentCost,
+                        type: "REFUND",
+                        fromUserId: ownerId,
+                        toUserId: renter.id,
+                        itemId: booking.itemId,
+                        referenceId: bookingId,
+                        status: "COMPLETED"
+                    }
+                });
+            }
 
             // 5. Booking → CANCELLED
             await tx.booking.update({

@@ -1,0 +1,23 @@
+# UX Problems List (Heuristic Evaluation)
+
+Based on the audit of the CampusShare platform, here are the identified UX issues ranked by severity.
+
+## 1. Critical
+- **Mobile Usability (Dashboard Filters)**: The Category and Type filters use native HTML `<select>` elements. On iOS/Android, these trigger clunky native wheels that disrupt the flow. A modern horizontal scroll of filter "chips" or a bottom-sheet filter drawer would be significantly better.
+- **Cognitive Load & Screen Real Estate (Dashboard)**: The sticky search bar + filters takes up too much vertical space on mobile (sticky top-14), leaving less room for actual content.
+- **Form Error States & Feedback**: While using `react-hook-form` and `zod`, standard implementations often rely on small red text or toasts. The user should get immediate inline validation with clear recovery paths, especially for complex forms like "Post Item".
+
+## 2. Major
+- **Visual Hierarchy (Item Card)**: The [ItemCard](file:///c:/Upendra/Git%20Hub/Git%20Hub%20--%20Kolla%20Upendra/campusshare/src/components/items/ItemCard.tsx#31-93) gives equal visual weight to the title, price, and owner. The price (primary decision factor) should be more prominent. The `aspect-video` ratio for images forces aggressive cropping, which is bad for vertical items like books or clothes.
+- **Empty States (Dashboard/My Items)**: When no items match a search, the UI displays bare text ("No items found"). This is a missed opportunity. It should feature a friendly illustration and a clear CTA (e.g., "Clear all filters").
+- **Navigation Overlap**: The mobile Floating Action Button (FAB) for "Post Item" (`bottom-20 right-4`) risks overlapping the last item in the grid, causing mis-clicks.
+
+## 3. Minor
+- **Authentication Friction**: The `/auth/signin` page is extremely barebones. It misses the chance to reinforce the platform's value proposition ("Join your specific campus network") alongside the login button.
+- **CTA Visibility & Sizing**: On the landing page (`/`), the primary "Get Started" and secondary "Browse Items" buttons stack on mobile but lack distinct visual separation to drive the primary action.
+- **Inconsistent Alignment**: The landing page is heavily center-aligned, whereas the app dashboard is left-aligned grids. This creates a slight cognitive disconnect when transitioning from signed-out to signed-in.
+
+## 4. Cosmetic
+- **Spacing & Density**: Card padding (`p-4 pt-2`) creates a slightly cramped feeling. Modern premium designs use more generous whitespace (e.g., `p-5` or `p-6` for larger screens) to let content breathe.
+- **Typography Contrast**: The use of `text-muted-foreground` for secondary text can sometimes fall below WCAG contrast ratios depending on the specific gray shade chosen in [globals.css](file:///c:/Upendra/Git%20Hub/Git%20Hub%20--%20Kolla%20Upendra/campusshare/src/app/globals.css). Needs checking.
+- **Animations**: The app feels static. There are no micro-interactions on hover (aside from basic `hover:scale-105` on images) or smooth page transitions.

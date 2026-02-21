@@ -104,7 +104,7 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
             });
             return;
         }
-        
+
         // Profile check handled globally by ProfileCompletionCheck
 
         setIsSubmitting(true);
@@ -245,27 +245,27 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
 
 
             {/* Rent/Sell Toggle */}
-            <div className="flex justify-center mb-6">
-                <div className="bg-muted p-1 rounded-lg inline-flex">
+            <div className="flex justify-center mb-8">
+                <div className="bg-muted p-1.5 rounded-2xl inline-flex shadow-inner">
                     <button
                         type="button"
                         onClick={() => setValue("type", "Sell")}
-                        className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${listingType === "Sell"
-                            ? "bg-primary text-primary-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
+                        className={`px-8 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${listingType === "Sell"
+                            ? "bg-background text-foreground shadow-md"
+                            : "text-muted-foreground hover:text-foreground hover:bg-background/50"
                             }`}
                     >
-                        Sell
+                        Sell Item
                     </button>
                     <button
                         type="button"
                         onClick={() => setValue("type", "Rent")}
-                        className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${listingType === "Rent"
-                            ? "bg-primary text-primary-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
+                        className={`px-8 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${listingType === "Rent"
+                            ? "bg-background text-foreground shadow-md"
+                            : "text-muted-foreground hover:text-foreground hover:bg-background/50"
                             }`}
                     >
-                        Rent
+                        Rent Out
                     </button>
                 </div>
             </div>
@@ -273,91 +273,96 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
 
 
             {/* Basic Info */}
-            <div className="space-y-2">
-                <label htmlFor="title" className="text-sm font-medium">Item Name</label>
-                <input
-                    {...register("title")}
-                    placeholder="e.g., Lab Coat, Scientific Calculator"
-                    className="w-full p-3 border rounded-lg bg-background"
-                />
-                {errors.title && <p className="text-red-500 text-xs">{errors.title.message}</p>}
-            </div>
+            <div className="bg-card p-6 sm:p-8 rounded-[2rem] border-0 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
+                <h3 className="text-xl font-bold border-b pb-4">Basic Details</h3>
 
-            <div className="space-y-2">
-                <label htmlFor="description" className="text-sm font-medium">Description</label>
-                <textarea
-                    {...register("description")}
-                    placeholder="Describe condition, details, etc."
-                    className="w-full p-3 border rounded-lg bg-background min-h-[100px]"
-                />
-                {errors.description && <p className="text-red-500 text-xs">{errors.description.message}</p>}
-            </div>
-
-
-
-            {/* Category & Condition */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">Category</label>
-                    <select {...register("category")} className="w-full p-3 border rounded-lg bg-background">
-                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
+                <div className="space-y-3">
+                    <label htmlFor="title" className="text-sm font-semibold">Item Name</label>
+                    <input
+                        {...register("title")}
+                        placeholder="e.g., MacBook Pro M2, Concepts of Physics"
+                        className="w-full p-4 rounded-xl border-0 ring-1 ring-inset ring-border bg-muted/50 focus:ring-2 focus:ring-inset focus:ring-primary transition-all"
+                    />
+                    {errors.title && <p className="text-destructive text-xs font-medium">{errors.title.message}</p>}
                 </div>
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">Condition</label>
-                    <select {...register("condition")} className="w-full p-3 border rounded-lg bg-background">
-                        {CONDITIONS.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
+
+                <div className="space-y-3">
+                    <label htmlFor="description" className="text-sm font-semibold">Description</label>
+                    <textarea
+                        {...register("description")}
+                        placeholder="Describe the item's condition, features, and any rules for renting..."
+                        className="w-full p-4 rounded-xl border-0 ring-1 ring-inset ring-border bg-muted/50 focus:ring-2 focus:ring-inset focus:ring-primary transition-all min-h-[120px] resize-y"
+                    />
+                    {errors.description && <p className="text-destructive text-xs font-medium">{errors.description.message}</p>}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                    <div className="space-y-3">
+                        <label className="text-sm font-semibold">Category</label>
+                        <select {...register("category")} className="w-full p-4 rounded-xl border-0 ring-1 ring-inset ring-border bg-muted/50 focus:ring-2 focus:ring-inset focus:ring-primary transition-all appearance-none cursor-pointer">
+                            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                    </div>
+                    <div className="space-y-3">
+                        <label className="text-sm font-semibold">Condition</label>
+                        <select {...register("condition")} className="w-full p-4 rounded-xl border-0 ring-1 ring-inset ring-border bg-muted/50 focus:ring-2 focus:ring-inset focus:ring-primary transition-all appearance-none cursor-pointer">
+                            {CONDITIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            {/* Price */}
-            {/* Price & Rental Specifics */}
-            <div className="space-y-2">
-                <label htmlFor="price" className="text-sm font-medium">
-                    {listingType === "Rent" ? "Rental Price per Day (₹)" : "Price (₹)"}
-                </label>
-                <input
-                    {...register("price")}
-                    type="number"
-                    step="0.01"
-                    placeholder={listingType === "Rent" ? "e.g. 500" : "e.g. 1500"}
-                    className="w-full p-3 border rounded-lg bg-background"
-                />
-                {errors.price && <p className="text-red-500 text-xs">{errors.price.message}</p>}
-            </div>
+            {/* Pricing Section */}
+            <div className="bg-card p-6 sm:p-8 rounded-[2rem] border-0 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
+                <h3 className="text-xl font-bold border-b pb-4">Pricing {listingType === "Rent" ? "& Availability" : ""}</h3>
 
-            {listingType === "Rent" && (
-                <>
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Available From</label>
+                <div className="space-y-3">
+                    <label htmlFor="price" className="text-sm font-semibold">
+                        {listingType === "Rent" ? "Rental Price per Day (₹)" : "Selling Price (₹)"}
+                    </label>
+                    <div className="relative">
+                        <span className="absolute left-5 top-[18px] text-muted-foreground font-semibold">₹</span>
                         <input
-                            {...register("availableFrom")}
-                            type="date"
-                            className="w-full p-3 border rounded-lg bg-background"
+                            {...register("price")}
+                            type="number"
+                            step="0.01"
+                            placeholder={listingType === "Rent" ? "e.g. 50" : "e.g. 1500"}
+                            className="w-full p-4 pl-9 rounded-xl border-0 ring-1 ring-inset ring-border bg-muted/50 focus:ring-2 focus:ring-inset focus:ring-primary transition-all font-medium text-lg"
                         />
                     </div>
+                    {errors.price && <p className="text-destructive text-xs font-medium">{errors.price.message}</p>}
+                </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Available Until</label>
-                        <input
-                            {...register("availableUntil")}
-                            type="date"
-                            className="w-full p-3 border rounded-lg bg-background"
-                        />
+                {listingType === "Rent" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                        <div className="space-y-3">
+                            <label className="text-sm font-semibold">Available From</label>
+                            <input
+                                {...register("availableFrom")}
+                                type="date"
+                                className="w-full p-4 rounded-xl border-0 ring-1 ring-inset ring-border bg-muted/50 focus:ring-2 focus:ring-inset focus:ring-primary transition-all appearance-none cursor-pointer"
+                            />
+                        </div>
+                        <div className="space-y-3">
+                            <label className="text-sm font-semibold">Available Until</label>
+                            <input
+                                {...register("availableUntil")}
+                                type="date"
+                                className="w-full p-4 rounded-xl border-0 ring-1 ring-inset ring-border bg-muted/50 focus:ring-2 focus:ring-inset focus:ring-primary transition-all appearance-none cursor-pointer"
+                            />
+                        </div>
                     </div>
-                </>
-            )}
-
-
+                )}
+            </div>
 
             {/* Image Upload Section */}
-            <div className="space-y-2">
-                <label className="text-sm font-medium">Product Image</label>
-                <div className="border border-dashed rounded-lg p-4">
-                    <div className="flex flex-wrap justify-center gap-4 mb-4">
+            <div className="bg-card p-6 sm:p-8 rounded-[2rem] border-0 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
+                <h3 className="text-xl font-bold border-b pb-4">Product Image</h3>
+
+                <div className="border-2 border-dashed border-border rounded-xl p-8 bg-muted/10 hover:bg-muted/30 transition-colors text-center group cursor-pointer relative overflow-hidden">
+                    <div className="flex flex-wrap justify-center gap-4 relative z-10">
                         {imageUrls.map((url, index) => (
-                            <div key={index} className="relative w-24 h-24 rounded-lg overflow-hidden border">
+                            <div key={index} className="relative w-32 h-32 rounded-xl overflow-hidden border shadow-sm shadow-black/5">
                                 <Image
                                     src={url}
                                     alt={`Product ${index + 1}`}
@@ -366,36 +371,39 @@ export default function AddItemForm({ initialData, cloudinaryConfig }: AddItemFo
                                 />
                                 <button
                                     type="button"
-                                    onClick={() => removeImage(index)}
-                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 h-5 w-5 flex items-center justify-center text-xs"
+                                    onClick={(e) => { e.preventDefault(); removeImage(index); }}
+                                    className="absolute top-2 right-2 bg-destructive/90 hover:bg-destructive text-white rounded-full p-1.5 h-7 w-7 flex items-center justify-center text-sm shadow-sm transition-all hover:scale-105 z-20"
                                 >
                                     ×
                                 </button>
                             </div>
                         ))}
                         {imageUrls.length < 1 && (
-                            <div className="w-24 h-24 flex items-center justify-center bg-muted rounded-lg border cursor-pointer hover:bg-muted/80 relative">
-                                <span className="text-2xl text-muted-foreground">+</span>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleImageUpload}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
-                                    title="Upload images"
-                                />
+                            <div className="w-full h-32 flex flex-col items-center justify-center space-y-3">
+                                <div className="h-14 w-14 bg-primary/10 rounded-full flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                </div>
+                                <div className="text-sm font-semibold">Click to upload image</div>
+                                <div className="text-xs text-muted-foreground font-medium">Max file size 5MB</div>
                             </div>
                         )}
                     </div>
-                    <p className="text-xs text-muted-foreground text-center">
-                        Upload an image of your product.
-                    </p>
+                    {imageUrls.length < 1 && (
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
+                            title="Upload images"
+                        />
+                    )}
                 </div>
             </div>
 
-            <Button type="submit" size="lg" className="w-full font-bold mt-4" disabled={isSubmitting}>
+            <Button type="submit" size="lg" className="w-full h-16 rounded-2xl text-lg font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all hover:-translate-y-1 mt-8 bg-primary text-primary-foreground" disabled={isSubmitting}>
                 {isSubmitting ? (
                     <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         Saving...
                     </>
                 ) : (

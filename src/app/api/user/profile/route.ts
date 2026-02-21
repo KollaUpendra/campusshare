@@ -13,7 +13,7 @@ export async function PUT(req: Request) {
         const body = await req.json();
         const { name, bio, phoneNumber, image, year, branch, section, address } = body;
 
-        await db.user.update({
+        const updatedUser = await db.user.update({
             where: { id: session.user.id },
             data: {
                 name,
@@ -29,9 +29,12 @@ export async function PUT(req: Request) {
             }
         });
 
-        return NextResponse.json({ message: "Profile updated" });
+        return NextResponse.json({ message: "Profile updated", user: updatedUser });
 
-    } catch (error: unknown) {
+    } catch (error: any) {
+        if (error.code === 'P2025') {
+            return new NextResponse("User record not found. Please sign out and sign in again.", { status: 404 });
+        }
         console.error("[PROFILE_UPDATE]", error);
         return new NextResponse("Internal Error", { status: 500 });
     }

@@ -1,0 +1,70 @@
+# Page Redesign Plan & Implementation Strategy
+
+This plan outlines the structural and aesthetic changes to be made across the CampusShare platform, preserving all backend logic, API contracts, and database schemas.
+
+## User Review Required
+> [!IMPORTANT]
+> Please review this redesign plan. We are changing the structural layout and styling of key pages. No backend or database changes will be made. **Do you approve this proposal so we can begin the implementation phase?**
+
+## Proposed Changes
+
+### Global Architecture
+- **CSS Variables**: Update [globals.css](file:///c:/Upendra/Git%20Hub/Git%20Hub%20--%20Kolla%20Upendra/campusshare/src/app/globals.css) with the new design system tokens (Brand Indigo, pure white cards, soft pearl backgrounds).
+- **Layout Shell ([AppShell.tsx](file:///c:/Upendra/Git%20Hub/Git%20Hub%20--%20Kolla%20Upendra/campusshare/src/components/layout/AppShell.tsx))**: Refine spacing and ensure the `BottomNav` integrates seamlessly without overlapping content.
+
+---
+
+### Landing Page ([/page.tsx](file:///c:/Upendra/Git%20Hub/Git%20Hub%20--%20Kolla%20Upendra/campusshare/src/app/page.tsx))
+- **Current Issues**: Center-heavy layout, static feel, generic button hierarchy.
+- **New Layout**: 
+  - **Desktop**: Split hero section. Bold, left-aligned typography with a dynamic visual (staggered UI cards) on the right.
+  - **Mobile**: Clean, punchy hero with full-width primary CTA.
+  - **Features**: Convert the 3-column feature grid to a more engaging masonry or alternating layout.
+- **Component Reuse**: `Button`, new `FeatureCard` component.
+
+### Dashboard ([/dashboard/page.tsx](file:///c:/Upendra/Git%20Hub/Git%20Hub%20--%20Kolla%20Upendra/campusshare/src/app/dashboard/page.tsx))
+- **Current Issues**: Clunky native `<select>` filters, sticky header takes up too much vertical space, generic empty state.
+- **New Layout**:
+  - **Search & Filters**: Replace the native dropdowns with a sleek horizontal scrolling row of "Chips" (segmented control) for Categories. 
+  - **Grid**: Optimized aspect ratios for [ItemCard](file:///c:/Upendra/Git%20Hub/Git%20Hub%20--%20Kolla%20Upendra/campusshare/src/components/items/ItemCard.tsx#31-93) to prevent aggressive image cropping.
+  - **Empty State**: Beautiful illustrated empty state indicating "No items found".
+- **Performance**: Optimize images on cards, ensure rendering is clean.
+
+### Item Card ([/components/items/ItemCard.tsx](file:///c:/Upendra/Git%20Hub/Git%20Hub%20--%20Kolla%20Upendra/campusshare/src/components/items/ItemCard.tsx))
+- **Current Issues**: Equal weight given to title and price. Takes up too much space for action buttons.
+- **New Layout**: 
+  - Highlight the price with the primary or accent color.
+  - Use a subtle glassmorphism or soft shadow (`shadow-sm hover:shadow-md`).
+  - Smooth scale animation on the image (`hover:scale-105 duration-500`).
+
+### Authentication ([/auth/signin/page.tsx](file:///c:/Upendra/Git%20Hub/Git%20Hub%20--%20Kolla%20Upendra/campusshare/src/app/auth/signin/page.tsx))
+- **Current Issues**: Extremely barebones, missing trust signals.
+- **New Layout**: 
+  - **Desktop**: Split screen design. Left side features an inspiring campus/student graphic or a rotating testimonial. Right side contains the centered login card.
+  - **Mobile**: Elevated card with subtle background blur and a vibrant logo presentation.
+
+### Post Item ([/post-item/page.tsx](file:///c:/Upendra/Git%20Hub/Git%20Hub%20--%20Kolla%20Upendra/campusshare/src/app/post-item/page.tsx) & `AddItemForm.tsx`)
+- **Current Issues**: Basic vertical form lacking strong contextual grouping.
+- **New Layout**:
+  - Group fields logically into "Cards" (e.g., *Basic Details*, *Pricing*, *Images*).
+  - Modernize the image upload zone into a dashed dropzone with thumbnail previews.
+  - Ensure clear inline validation states (red borders, helper text) instead of relying solely on toasts.
+
+### Item Details (`/items/[id]/page.tsx` - extrapolated)
+- **Current Issues**: Standard vertical stack.
+- **New Layout**:
+  - **Desktop**: 2-column layout. Image gallery on the left, sticky booking/action card on the right (similar to Airbnb).
+  - **Mobile**: Full-width swipeable image gallery at the top, with a rounded bottom-sheet style content area overlapping the images slightly.
+
+---
+
+## Verification Plan
+
+### Automated Tests
+- Run `npm run build` after changes to ensure no TypeScript or routing errors.
+- Run `npm run lint` to verify clean code styling.
+
+### Manual Verification
+- **Visual Audit**: Manually verify the Landing page, Dashboard, and Auth pages against the Design System Spec on both Desktop and Mobile viewport sizes using the browser tools.
+- **Functionality Audit**: Ensure that posting an item, searching items, and signing in still function perfectly via browser testing.
+- **Contrast Check**: Verify that new colors meet WCAG contrast requirements using browser DevTools.

@@ -73,20 +73,7 @@ export async function POST(
                 data: { coins: { increment: actualDeduction } }
             });
 
-            // 3. Wallet Transaction — Fine Debit
-            await tx.transaction.create({
-                data: {
-                    amount: -actualDeduction,
-                    type: "FINE",
-                    fromUserId: finedUser.id,
-                    toUserId: beneficiary,
-                    referenceId: complaintId,
-                    balanceAfter: updatedFined.coins,
-                    status: "COMPLETED"
-                }
-            });
-
-            // 4. Wallet Transaction — Fine Credit
+            // 3. Wallet Transaction — Fine Transfer
             if (actualDeduction > 0) {
                 await tx.transaction.create({
                     data: {
@@ -95,7 +82,6 @@ export async function POST(
                         fromUserId: finedUser.id,
                         toUserId: beneficiary,
                         referenceId: complaintId,
-                        balanceAfter: updatedBeneficiary.coins,
                         status: "COMPLETED"
                     }
                 });

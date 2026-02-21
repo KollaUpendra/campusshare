@@ -38,84 +38,84 @@ export default async function AdminTransactionsPage() {
         <Badge variant="outline">{transactions.length} Total</Badge>
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card className="rounded-[2rem] border-0 shadow-sm overflow-hidden">
+        <CardHeader className="bg-muted/10 border-b">
           <CardTitle>Transaction History</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <div className="w-full overflow-x-auto">
-              <table className="w-full caption-bottom text-sm text-left min-w-[800px]">
-                <thead className="[&_tr]:border-b">
-                  <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                    <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Date</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Type</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">From</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">To</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Item</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Amount</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Status</th>
+        <CardContent className="p-0">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full text-sm text-left min-w-[800px]">
+              <thead className="bg-muted/30 text-muted-foreground border-b">
+                <tr>
+                  <th className="h-12 px-6 font-semibold tracking-wide">Date</th>
+                  <th className="h-12 px-6 font-semibold tracking-wide">Type</th>
+                  <th className="h-12 px-6 font-semibold tracking-wide">From</th>
+                  <th className="h-12 px-6 font-semibold tracking-wide">To</th>
+                  <th className="h-12 px-6 font-semibold tracking-wide">Item</th>
+                  <th className="h-12 px-6 font-semibold tracking-wide">Amount</th>
+                  <th className="h-12 px-6 font-semibold tracking-wide">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                {transactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-muted-foreground font-medium">
+                      No transactions found.
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="[&_tr:last-child]:border-0">
-                  {transactions.length === 0 ? (
-                    <tr className="border-b transition-colors hover:bg-muted/50">
-                      <td colSpan={7} className="p-4 align-middle h-24 text-center">
-                        No transactions found.
+                ) : (
+                  transactions.map((txn) => (
+                    <tr key={txn.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="p-4 px-6 whitespace-nowrap text-muted-foreground">
+                        {format(new Date(txn.createdAt), "PP p")}
+                      </td>
+                      <td className="p-4 px-6">
+                        <Badge variant="outline" className="bg-background text-foreground tracking-wide font-medium">
+                          {txn.type}
+                        </Badge>
+                      </td>
+                      <td className="p-4 px-6">
+                        <div className="flex flex-col">
+                          <span className="font-medium whitespace-nowrap text-foreground">
+                            {txn.fromUser?.name || "System"}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {txn.fromUser?.email}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-4 px-6">
+                        <div className="flex flex-col">
+                          <span className="font-medium whitespace-nowrap text-foreground">
+                            {txn.toUser?.name || "System"}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {txn.toUser?.email}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-4 px-6 whitespace-nowrap font-medium">{txn.item?.title || "-"}</td>
+                      <td className="p-4 px-6 font-bold text-foreground">
+                        ₹{txn.amount.toFixed(2)}
+                      </td>
+                      <td className="p-4 px-6">
+                        <Badge
+                          variant="secondary"
+                          className={`tracking-wide font-medium ${txn.status === "COMPLETED"
+                              ? "bg-green-100 text-green-800 hover:bg-green-100"
+                              : txn.status === "FAILED"
+                                ? "bg-red-100 text-red-800 hover:bg-red-100"
+                                : "bg-muted text-muted-foreground hover:bg-muted"
+                            }`}
+                        >
+                          {txn.status}
+                        </Badge>
                       </td>
                     </tr>
-                  ) : (
-                    transactions.map((txn) => (
-                      <tr key={txn.id} className="border-b transition-colors hover:bg-muted/50">
-                        <td className="p-4 align-middle whitespace-nowrap">
-                          {format(new Date(txn.createdAt), "PP p")}
-                        </td>
-                        <td className="p-4 align-middle">
-                          <Badge variant="secondary">{txn.type}</Badge>
-                        </td>
-                        <td className="p-4 align-middle">
-                          <div className="flex flex-col">
-                            <span className="font-medium whitespace-nowrap">
-                              {txn.fromUser?.name || "System"}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {txn.fromUser?.email}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="p-4 align-middle">
-                          <div className="flex flex-col">
-                            <span className="font-medium whitespace-nowrap">
-                              {txn.toUser?.name || "System"}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {txn.toUser?.email}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="p-4 align-middle whitespace-nowrap">{txn.item?.title || "-"}</td>
-                        <td className="p-4 align-middle font-bold">
-                          ₹{txn.amount.toFixed(2)}
-                        </td>
-                        <td className="p-4 align-middle">
-                          <Badge
-                            variant={
-                              txn.status === "COMPLETED"
-                                ? "default"
-                                : txn.status === "FAILED"
-                                ? "destructive"
-                                : "outline"
-                            }
-                          >
-                            {txn.status}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>
