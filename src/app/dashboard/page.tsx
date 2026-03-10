@@ -155,13 +155,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                     )}
                 </section>
 
-                {/* FAB for Mobile Post */}
-                <Link href="/post-item" className="md:hidden fixed bottom-24 right-6 z-50">
-                    <Button size="icon" className="h-16 w-16 rounded-full shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all bg-primary">
-                        <PlusCircle className="h-7 w-7" />
-                        <span className="sr-only">Post Item</span>
-                    </Button>
-                </Link>
+
             </div>
         </AuthGuard>
     );
