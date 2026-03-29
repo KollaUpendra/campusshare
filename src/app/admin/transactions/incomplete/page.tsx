@@ -47,7 +47,7 @@ export default function IncompleteTransactionsPage() {
                 Incomplete Transactions
             </h1>
             <p className="text-muted-foreground">
-                Transactions stalled in "Pending Confirmation" state.
+                Transactions stalled in &quot;Pending Confirmation&quot; state.
             </p>
 
             {transactions.length === 0 ? (

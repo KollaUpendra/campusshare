@@ -42,14 +42,14 @@ export async function POST(
             return new NextResponse("Can only rollback accepted or completed bookings", { status: 400 });
         }
 
-        const rentCost = (booking.item as any).rentCoins || 0;
+        const rentCost = (booking.item as { rentCoins?: number }).rentCoins || 0;
         const renter = booking.borrower;
         const ownerId = booking.item.ownerId;
 
         // Atomic rollback transaction
-        const result = await db.$transaction(async (tx: any) => {
+        const result = await db.$transaction(async (tx) => {
             // 1. Refund Renter
-            const updatedRenter = await tx.user.update({
+            await tx.user.update({
                 where: { id: renter.id },
                 data: { coins: { increment: rentCost } }
             });
@@ -57,7 +57,7 @@ export async function POST(
             // 2. Deduct Owner (protect against negative — set to 0 minimum)
             const owner = await tx.user.findUnique({ where: { id: ownerId }, select: { coins: true } });
             const ownerNewCoins = Math.max(0, (owner?.coins || 0) - rentCost);
-            const updatedOwner = await tx.user.update({
+            await tx.user.update({
                 where: { id: ownerId },
                 data: { coins: ownerNewCoins }
             });

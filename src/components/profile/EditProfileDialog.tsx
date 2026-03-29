@@ -99,11 +99,11 @@ export default function EditProfileDialog({ user, forceOpen = false }: EditProfi
                 setOpen(false);
             }
             router.refresh();
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast({
                 variant: "destructive",
                 title: "Error Updating Profile",
-                description: error.message || "Something went wrong while updating your profile.",
+                description: error instanceof Error ? error.message : "Something went wrong while updating your profile.",
             });
         } finally {
             setIsLoading(false);
@@ -127,7 +127,7 @@ export default function EditProfileDialog({ user, forceOpen = false }: EditProfi
                 <DialogHeader>
                     <DialogTitle>Edit Profile</DialogTitle>
                     <DialogDescription>
-                        Make changes to your profile here. Click save when you're done.
+                        Make changes to your profile here. Click save when you&apos;re done.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={onSubmit} className="grid gap-4 py-4">
@@ -139,8 +139,11 @@ export default function EditProfileDialog({ user, forceOpen = false }: EditProfi
                             {/* Minimal Cloudinary Upload Widget */}
                             <CldUploadWidget
                                 signatureEndpoint="/api/sign-cloudinary" // Fix: match actual API route path
-                                onSuccess={(result: any) => {
-                                    setImageUrl(result.info.secure_url);
+                                onSuccess={(result: unknown) => {
+                                    const res = result as { info?: { secure_url?: string } };
+                                    if (res?.info?.secure_url) {
+                                        setImageUrl(res.info.secure_url);
+                                    }
                                 }}
                             >
                                 {({ open }) => (

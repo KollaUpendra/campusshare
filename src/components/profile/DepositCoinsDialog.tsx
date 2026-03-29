@@ -54,11 +54,11 @@ export default function DepositCoinsDialog() {
             });
             setOpen(false);
             router.refresh();
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: error.message || "Something went wrong. Please try again.",
+                description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
             });
         } finally {
             setIsLoading(false);

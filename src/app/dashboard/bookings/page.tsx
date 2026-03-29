@@ -202,7 +202,7 @@ export default function BookingsPage() {
             }
 
             const newStatus = action === "accepted" ? "ACCEPTED" : "REJECTED";
-            setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus as any } : b));
+            setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus as Booking["status"] } : b));
             if (action === "rejected") setRejectConfirmOpen(false);
         } catch (error) {
             toast({

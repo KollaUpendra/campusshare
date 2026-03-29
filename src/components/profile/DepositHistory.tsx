@@ -20,7 +20,7 @@ interface Deposit {
     transactionId: string | null;
     status: string;
     adminMessage: string | null;
-    createdAt: string;
+    createdAt: string | Date;
 }
 
 export default function DepositHistory({ deposits }: { deposits: Deposit[] }) {

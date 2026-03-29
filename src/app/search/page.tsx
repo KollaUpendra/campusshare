@@ -37,7 +37,7 @@ export default function SearchPage() {
                         autoFocus
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="What aren you looking for?"
+                        placeholder="What are you looking for?"
                         className="w-full pl-10 pr-4 py-3 rounded-xl border bg-background shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                 </div>

@@ -41,7 +41,7 @@ export default function ServiceChargesPage() {
                 title: "Success",
                 description: "System settings saved successfully.",
             });
-        } catch (error) {
+        } catch {
             toast({
                 title: "Error",
                 description: "Failed to save settings.",

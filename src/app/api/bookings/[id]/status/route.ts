@@ -60,13 +60,7 @@ export async function POST(
 
             // action is already extracted from body at the top
 
-            let updateData: any = {};
-
-            if (isBorrower && action === "conf_returned") {
-                updateData.isReturned = true;
-            } else if (isOwner && action === "conf_received") {
-                updateData.isReceived = true;
-            } else {
+            if (!(isBorrower && action === "conf_returned") && !(isOwner && action === "conf_received")) {
                 return new NextResponse("Invalid action or role", { status: 400 });
             }
 
@@ -80,7 +74,7 @@ export async function POST(
             );
 
             // Fetch the updated booking to check both flags
-            const updatedBookings = await db.$queryRawUnsafe<any[]>(
+            const updatedBookings = await db.$queryRawUnsafe<{ isReturned: boolean; isReceived: boolean }[]>(
                 `SELECT * FROM "Booking" WHERE "id" = $1`,
                 bookingId
             );

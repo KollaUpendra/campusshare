@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { 
     Table, 
@@ -11,8 +11,8 @@ import {
     TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Loader2, CheckCircle2, XCircle, Search, Filter } from "lucide-react";
+// Removed Input
+import { Loader2, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { 
     Dialog,
@@ -54,7 +54,7 @@ export default function DepositManagement() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
 
-    const fetchDeposits = async () => {
+    const fetchDeposits = useCallback(async () => {
         setIsLoading(true);
         try {
             const params = new URLSearchParams();
@@ -66,16 +66,16 @@ export default function DepositManagement() {
             if (!res.ok) throw new Error("Failed to fetch");
             const data = await res.json();
             setDeposits(data);
-        } catch (error) {
+        } catch {
             toast({ variant: "destructive", title: "Error", description: "Failed to load requests" });
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [filterStatus, filterType, toast]);
 
     useEffect(() => {
         fetchDeposits();
-    }, [filterStatus, filterType]);
+    }, [fetchDeposits]);
 
     const handleAction = async () => {
         if (!selectedRequest || !actionStatus) return;
@@ -97,8 +97,8 @@ export default function DepositManagement() {
             setAdminMessage("");
             setActionStatus("");
             fetchDeposits();
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Error", description: error.message || "Operation failed" });
+        } catch (error: unknown) {
+            toast({ variant: "destructive", title: "Error", description: error instanceof Error ? error.message : "Operation failed" });
         } finally {
             setIsSubmitting(false);
         }
@@ -198,7 +198,7 @@ export default function DepositManagement() {
                                                         <span className="select-all">{deposit.upiId}</span>
                                                     </div>
                                                 )}
-                                                {deposit.message && <div className="text-[10px] italic line-clamp-1 mt-1 text-muted-foreground" title={deposit.message}>"{deposit.message}"</div>}
+                                                {deposit.message && <div className="text-[10px] italic line-clamp-1 mt-1 text-muted-foreground" title={deposit.message}>&ldquo;{deposit.message}&rdquo;</div>}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge variant={

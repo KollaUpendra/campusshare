@@ -14,15 +14,15 @@ export default async function PaymentHistoryPage() {
         redirect("/api/auth/signin");
     }
 
-    const userData = await (db.user.findUnique({
+    const userData = await db.user.findUnique({
         where: { id: session.user.id },
         include: {
             depositRequests: {
                 orderBy: { createdAt: "desc" },
                 take: 50
             }
-        } as any
-    }) as any);
+        }
+    });
 
     if (!userData) {
         return <div className="p-8 text-center">User not found</div>;

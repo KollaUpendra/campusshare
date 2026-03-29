@@ -108,7 +108,7 @@ export async function POST(req: Request) {
             }
 
             // Expiry Check
-            if ((item as any).availableUntil && (item as any).availableUntil < new Date().toISOString().split('T')[0]) {
+            if ((item as { availableUntil?: string | Date }).availableUntil && (item as { availableUntil?: string | Date }).availableUntil! < new Date().toISOString().split('T')[0]) {
                  return new NextResponse("This item's availability has expired", { status: 400 });
             }
 
@@ -133,7 +133,7 @@ export async function POST(req: Request) {
                             endDate: { gte: bookingStartDate }
                          }
                     ]
-                } as any
+                } as Exclude<Parameters<typeof db.booking.findFirst>[0], undefined>["where"]
             });
             
             if (overlap) return new NextResponse("Item already booked for these dates", { status: 409 });
@@ -159,7 +159,7 @@ export async function POST(req: Request) {
                     totalPrice: totalPrice,
                     timeSlot: timeSlot || null,
                     status: "PENDING"
-                } as any
+                } as Exclude<Parameters<typeof db.booking.create>[0], undefined>["data"]
             });
 
             // 2. Update Item Status -> PENDING (hides from marketplace)

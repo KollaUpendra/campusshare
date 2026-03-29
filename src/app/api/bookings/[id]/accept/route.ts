@@ -57,7 +57,7 @@ export async function POST(
                 data: {
                     status: "ACCEPTED",
                     pickupLocation: pickupLocation || null
-                } as any
+                } as Exclude<Parameters<typeof tx.booking.update>[0], undefined>["data"]
             });
 
             // 2. Notify Renter

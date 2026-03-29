@@ -26,7 +26,7 @@ export async function PATCH(
             return new NextResponse("User is already blocked", { status: 400 });
         }
 
-        await db.$transaction(async (tx: any) => {
+        await db.$transaction(async (tx) => {
             await tx.user.update({
                 where: { id: userId },
                 data: { isBlocked: true }

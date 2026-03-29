@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     const status = searchParams.get("status");
     const type = searchParams.get("type");
 
-    const whereClause: any = {};
+    const whereClause: Exclude<Parameters<typeof db.depositRequest.findMany>[0], undefined>["where"] = {};
     if (status) whereClause.status = status;
     if (type) whereClause.type = type;
 

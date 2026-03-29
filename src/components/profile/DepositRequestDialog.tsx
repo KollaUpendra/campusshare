@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Coins, Loader2, Plus } from "lucide-react";
+import { Coins, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -53,11 +53,11 @@ export default function DepositRequestDialog() {
             });
             setOpen(false);
             router.refresh();
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: error.message || "Something went wrong. Please try again.",
+                description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
             });
         } finally {
             setIsLoading(false);

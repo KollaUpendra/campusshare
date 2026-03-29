@@ -127,9 +127,9 @@ export async function PUT(
     });
 
     return NextResponse.json(result);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[ADMIN_DEPOSITS_PUT]", error);
-    if (error.message === "Insufficient user balance at time of approval") {
+    if (error instanceof Error && error.message === "Insufficient user balance at time of approval") {
       return new NextResponse(error.message, { status: 400 });
     }
     return new NextResponse("Internal Error", { status: 500 });

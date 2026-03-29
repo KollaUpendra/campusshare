@@ -7,7 +7,7 @@ export default function PrivacyPolicyHelper() {
             <section className="mb-8">
                 <h2 className="text-2xl font-semibold mb-3">1. Introduction</h2>
                 <p className="mb-2">
-                    Welcome to CampusShare ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy.
+                    Welcome to CampusShare (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). We are committed to protecting your personal information and your right to privacy.
                     If you have any questions or concerns about this privacy notice or our practices with regards to your personal information, please contact us.
                 </p>
             </section>

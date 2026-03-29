@@ -41,8 +41,6 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Detect if running on HTTPS (production)
-const useSecureCookies = (process.env.NEXTAUTH_URL ?? '').startsWith('https://');
-const cookiePrefix = useSecureCookies ? '__Secure-' : '';
 
 export const authOptions: NextAuthOptions = {
     // connect to Prisma DB for user/session storage
@@ -71,7 +69,7 @@ export const authOptions: NextAuthOptions = {
          * @param {object} user - The user object returned by the provider.
          * @returns {Promise<boolean>} True if sign-in is allowed, false otherwise.
          */
-        async signIn({ user, account }) {
+        async signIn({ user }) {
 
 
             // CHECK IF USER IS BLOCKED
@@ -102,12 +100,12 @@ export const authOptions: NextAuthOptions = {
             try {
                 if (user) {
                     token.id = user.id;
-                    token.role = (user as any).role || "student";
+                    token.role = (user as { role?: string }).role ?? "student";
                 }
 
                 // Always fetch latest data (coins changes frequently)
                 if (token.id) {
-                    const dbUser = await (db.user as any).findUnique({
+                    const dbUser = await db.user.findUnique({
                         where: { id: token.id as string },
                         select: {
                             role: true,
@@ -139,12 +137,12 @@ export const authOptions: NextAuthOptions = {
             if (session.user) {
                 session.user.id = token.id as string;
                 session.user.role = token.role as string;
-                (session.user as any).coins = token.coins as number;
-                (session.user as any).year = token.year;
-                (session.user as any).branch = token.branch;
-                (session.user as any).section = token.section;
-                (session.user as any).address = token.address;
-                (session.user as any).phoneNumber = token.phoneNumber;
+                session.user.coins = token.coins as number;
+                session.user.year = token.year;
+                session.user.branch = token.branch;
+                session.user.section = token.section;
+                session.user.address = token.address;
+                session.user.phoneNumber = token.phoneNumber;
             }
             return session;
         },

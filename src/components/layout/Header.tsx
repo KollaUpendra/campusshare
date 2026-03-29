@@ -42,7 +42,7 @@ export default function Header() {
                         <>
                             <div className="hidden md:flex items-center gap-1 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium border border-yellow-200">
                                 <span>🪙</span>
-                                <span>{(session.user as any).coins?.toFixed(0) || 0}</span>
+                                <span>{session.user.coins?.toFixed(0) ?? 0}</span>
                             </div>
 
                             <Button variant="ghost" size="icon" className="relative">

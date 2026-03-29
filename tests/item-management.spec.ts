@@ -1,9 +1,10 @@
 
 import { test, expect } from '@playwright/test';
 import { createTestUser, loginUser, cleanupTestData } from './test-utils';
+import * as fs from 'fs';
 
 test.describe('Item Management Lifecycle', () => {
-    let owner: any;
+    let owner: { user: { id: string; role?: string; email?: string } };
     const timestamp = Date.now();
     const itemTitle = `Test Item ${timestamp}`;
     const updatedTitle = `Updated Item ${timestamp}`;
@@ -102,7 +103,6 @@ test.describe('Item Management Lifecycle', () => {
 
         } catch (error) {
             console.error('Test Failed:', error);
-            const fs = require('fs');
             fs.appendFileSync('test-failure.log', `Test Failed: ${error}\n`);
             throw error;
         }

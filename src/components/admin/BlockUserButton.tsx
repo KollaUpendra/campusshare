@@ -41,7 +41,7 @@ export default function BlockUserButton({ userId, isBlocked }: BlockUserButtonPr
             
             setOpen(false);
             router.refresh();
-        } catch (error) {
+        } catch {
             toast({
                 variant: "destructive",
                 title: "Error",

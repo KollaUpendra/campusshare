@@ -39,7 +39,7 @@ export async function POST(
         }
 
         // --- ATOMIC REJECTION ---
-        const result = await db.$transaction(async (tx: any) => {
+        const result = await db.$transaction(async (tx) => {
             // 1. Update Booking -> REJECTED
             const updatedBooking = await tx.booking.update({
                 where: { id: bookingId },

@@ -1,7 +1,10 @@
 /**
- * @file middleware.ts
- * @description Next.js Middleware for protecting routes and enforcing role-based access control.
- * @module Middleware
+ * @file proxy.ts
+ * @description Next.js Proxy for protecting routes and enforcing role-based access control.
+ * @module Proxy
+ * 
+ * Migrated from middleware.ts to proxy.ts per Next.js 16 convention.
+ * See: https://nextjs.org/docs/messages/middleware-to-proxy
  * 
  * Functionality:
  * - Protects specific routes (like /dashboard, /admin, /post-item).
@@ -17,19 +20,19 @@ import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
 
 /**
- * Middleware function wrapped with `withAuth`.
+ * Proxy function wrapped with `withAuth`.
  * Executes on every request matching the config matcher.
  * 
  * @param {NextRequestWithAuth} req - The incoming request object, augmented with NextAuth token.
  */
 export default withAuth(
-    function middleware(req) {
+    function proxy(req) {
         // Retrieve the JWT token from the request
         const token = req.nextauth.token;
         const pathname = req.nextUrl.pathname;
         // Only log in development to avoid production noise
         if (process.env.NODE_ENV !== 'production') {
-            console.log(`[Middleware] Processing: ${pathname}`);
+            console.log(`[Proxy] Processing: ${pathname}`);
         }
 
         const isAdminRoute = pathname.startsWith("/admin");
@@ -66,8 +69,8 @@ export default withAuth(
 );
 
 /**
- * Middleware Configuration
- * Defines which paths should trigger the middleware.
+ * Proxy Configuration
+ * Defines which paths should trigger the proxy.
  */
 export const config = { matcher: ["/dashboard/:path*", "/admin/:path*", "/post-item", "/app/:path*"] };
 

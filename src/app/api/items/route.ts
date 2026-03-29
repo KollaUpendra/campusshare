@@ -65,7 +65,7 @@ export async function POST(req: Request) {
         const imageList = images && images.length > 0 ? images : (body.image ? [body.image] : []);
         const mainImage = imageList[0] || null;
 
-        const itemData: any = {
+        const itemData: Exclude<Parameters<typeof db.item.create>[0], undefined>["data"] = {
             title: title.trim(),
             description: description?.trim() || "",
             price: parseFloat(price),
@@ -163,7 +163,7 @@ export async function GET(req: Request) {
                 // Check if date has passed (simple check, creating a date object at 00:00)
                 // If itemDate < today (ignoring time), it's expired.
                 // For simplicity, we compare ISO strings
-                return (item as any).date >= now.toISOString().split('T')[0];
+                return (item as { date?: string | Date | null }).date! >= now.toISOString().split('T')[0];
             }
             return true;
         });
@@ -265,7 +265,7 @@ export async function PUT(req: Request) {
         const imageList = images && images.length > 0 ? images : (image ? [image] : []);
         const mainImage = imageList[0] || null;
 
-        const updateData: any = {
+        const updateData: Exclude<Parameters<typeof db.item.update>[0], undefined>["data"] = {
             title,
             description,
             price: price ? parseFloat(price) : undefined,
@@ -281,7 +281,7 @@ export async function PUT(req: Request) {
         };
 
         // Remove undefined keys
-        Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+        Object.keys(updateData).forEach(key => updateData[key as keyof typeof updateData] === undefined && delete updateData[key as keyof typeof updateData]);
 
 
         // Transaction to update item and replace availability

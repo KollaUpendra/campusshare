@@ -1,28 +1,18 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
 import EditProfileDialog from "./EditProfileDialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export default function ProfileCompletionCheck() {
     const { data: session } = useSession();
-    const [isOpen, setIsOpen] = useState(false);
-
-    useEffect(() => {
-        if (session && session.user) {
-            const user = session.user as any;
-            const isIncomplete = !user.name || !user.year || !user.branch || !user.section || !user.address || !user.phoneNumber;
-            
-            if (isIncomplete) {
-                setIsOpen(true);
-            } else {
-                setIsOpen(false);
-            }
-        }
-    }, [session]);
-
-    if (!isOpen || !session?.user) return null;
+    if (!session?.user) return null;
+    
+    // Compute if profile is incomplete directly during render
+    const user = session.user as { name?: string | null, year?: string | null, branch?: string | null, section?: string | null, address?: string | null, phoneNumber?: string | null };
+    const isIncomplete = !user.name || !user.year || !user.branch || !user.section || !user.address || !user.phoneNumber;
+    
+    // If complete, we don't need to force the dialog open, or we don't render it at all
+    if (!isIncomplete) return null;
 
     // We reuse EditProfileDialog but we need to control it externally or just render it.
     // Since EditProfileDialog manages its own state, we might need to modify it to accept `open` prop or just wrap it.
@@ -47,7 +37,7 @@ export default function ProfileCompletionCheck() {
     
     return (
         <EditProfileDialog 
-            user={session.user as any} 
+            user={session.user as { id: string; role: string; coins: number; name: string | null; email: string | null; image: string | null; bio: string | null; phoneNumber: string | null; year: string | null; branch: string | null; section: string | null; address: string | null; }} 
             forceOpen={true}
         />
     );

@@ -29,6 +29,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+interface BookingRequest {
+    id: string;
+    status: string;
+    totalPrice?: number;
+    pickupLocation?: string;
+}
+
 interface BookingRequestButtonProps {
     itemId: string;
     price: number;
@@ -36,7 +43,7 @@ interface BookingRequestButtonProps {
     availableFrom?: string | null;
     availableUntil?: string | null;
     type?: string;
-    currentRequest?: any; // Booking object
+    currentRequest?: BookingRequest;
 }
 
 export default function BookingRequestButton({
@@ -69,6 +76,7 @@ export default function BookingRequestButton({
 
 
     const handlePay = async () => {
+        if (!currentRequest) return;
         setIsConfirmOpen(false);
         setIsLoading(true);
         try {
@@ -112,7 +120,7 @@ export default function BookingRequestButton({
 
         setIsLoading(true);
         try {
-            const body: any = { itemId };
+            const body: Record<string, string> = { itemId };
             if (start) {
                 body.startDate = start;
                 body.endDate = end || start;

@@ -18,16 +18,16 @@ export default async function ProfilePage() {
         redirect("/");
     }
 
-    const userData = await (db.user.findUnique({
+    const userData = await db.user.findUnique({
         where: { id: session.user.id }
-    }) as any);
+    });
 
     if (!userData) {
         return <div>User not found</div>;
     }
 
-    // Explicitly cast to any to bypass stale TS errors in editor
-    const user = userData as any;
+    // Create a strict user object for the template
+    const user = userData as { id: string; role: string; coins: number; name: string | null; email: string | null; image: string | null; bio: string | null; phoneNumber: string | null; year: string | null; branch: string | null; section: string | null; address: string | null; };
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-4xl space-y-8">

@@ -126,7 +126,7 @@ export default async function ItemDetailsPage(props: Props) {
                         </h3>
                         <div className="flex flex-wrap gap-2">
                             {item.availability && item.availability.length > 0 ? (
-                                item.availability.map((a: any) => (
+                                item.availability.map((a: { dayOfWeek: string }) => (
                                     <Badge key={a.dayOfWeek} variant="secondary">
                                         {a.dayOfWeek}
                                     </Badge>
@@ -135,10 +135,10 @@ export default async function ItemDetailsPage(props: Props) {
                                 <Badge variant="secondary">All Days of Week</Badge>
                             )}
                         </div>
-                        {/* Type cast to any to handle new fields not yet in types */}
-                        {(item as any).availableFrom && (item as any).availableUntil && (
+                        {/* Type cast to handle new fields not yet in types */}
+                        {(item as { availableFrom?: Date | string | null; availableUntil?: Date | string | null }).availableFrom && (item as { availableFrom?: Date | string | null; availableUntil?: Date | string | null }).availableUntil && (
                              <p className="text-sm text-muted-foreground mt-2">
-                                From: {new Date((item as any).availableFrom).toLocaleDateString()} — Until: {new Date((item as any).availableUntil).toLocaleDateString()}
+                                From: {new Date((item as { availableFrom?: Date | string | null }).availableFrom!).toLocaleDateString()} — Until: {new Date((item as { availableUntil?: Date | string | null }).availableUntil!).toLocaleDateString()}
                              </p>
                         )}
                     </div>
@@ -153,11 +153,19 @@ export default async function ItemDetailsPage(props: Props) {
                         <BookingRequestButton 
                             itemId={item.id} 
                             price={item.price} 
-                            availableDays={item.availability.map((a: any) => a.dayOfWeek)}
-                            availableFrom={(item as any).availableFrom}
-                            availableUntil={(item as any).availableUntil}
+                            availableDays={item.availability.map((a: { dayOfWeek: string }) => a.dayOfWeek)}
+                            availableFrom={(() => {
+                                const val = (item as { availableFrom?: Date | string | null }).availableFrom;
+                                if (val instanceof Date) return val.toISOString();
+                                return val || null;
+                            })()}
+                            availableUntil={(() => {
+                                const val = (item as { availableUntil?: Date | string | null }).availableUntil;
+                                if (val instanceof Date) return val.toISOString();
+                                return val || null;
+                            })()}
                             type={item.type}
-                            currentRequest={existingBooking}
+                            currentRequest={(existingBooking as any) || undefined}
                         />
                     )}
                 </div>

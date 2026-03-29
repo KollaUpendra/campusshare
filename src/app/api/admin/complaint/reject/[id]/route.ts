@@ -15,7 +15,7 @@ export async function PATCH(
 
         const { id: complaintId } = await props.params;
         const body = await req.json().catch(() => ({}));
-        const { adminNotes } = body as any;
+        const { adminNotes } = body as { adminNotes?: string };
 
         const complaint = await db.complaint.findUnique({ where: { id: complaintId } });
         if (!complaint) return new NextResponse("Complaint not found", { status: 404 });
@@ -24,7 +24,7 @@ export async function PATCH(
             return new NextResponse("Complaint cannot be rejected in current status", { status: 400 });
         }
 
-        await db.$transaction(async (tx: any) => {
+        await db.$transaction(async (tx) => {
             await tx.complaint.update({
                 where: { id: complaintId },
                 data: {

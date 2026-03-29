@@ -42,7 +42,7 @@ export async function POST(
 
         // Calculate Cost dynamically based on days
         let cost = item.price;
-        const bookingAny = booking as any;
+        const bookingAny = booking as unknown as { startDate?: Date | string; endDate?: Date | string; totalPrice?: number };
         if (item.type === 'Rent' && bookingAny.startDate && bookingAny.endDate) {
             const start = new Date(bookingAny.startDate);
             const end = new Date(bookingAny.endDate);
@@ -67,15 +67,15 @@ export async function POST(
         // --- ATOMIC TRANSACTION ---
         const result = await db.$transaction(async (tx) => {
             // 1. Deduct from Renter
-            const updatedRenter = await tx.user.update({
+            await tx.user.update({
                 where: { id: renter.id },
                 data: { coins: { decrement: cost } }
             });
 
             // Calculate Service Charge
-            let settings: any = null;
-            if ((tx as any).systemSettings) {
-                settings = await (tx as any).systemSettings.findFirst();
+            let settings: { sellServiceChargePercent?: number; rentServiceChargePercent?: number } | null = null;
+            if ('systemSettings' in tx) {
+                settings = await (tx as { systemSettings: { findFirst: () => Promise<{ sellServiceChargePercent?: number; rentServiceChargePercent?: number }> } }).systemSettings.findFirst();
             }
             const isSell = item.type === 'Sell';
             const serviceChargePercent = isSell
@@ -86,7 +86,7 @@ export async function POST(
             const ownerPayout = cost - serviceCharge;
 
             // 2. Add to Owner (minus service charge)
-            const updatedOwner = await tx.user.update({
+            await tx.user.update({
                 where: { id: item.ownerId },
                 data: { coins: { increment: ownerPayout } }
             });
@@ -150,9 +150,9 @@ export async function POST(
 
         return NextResponse.json(result);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("[BOOKING_PAY]", error);
-        require("fs").writeFileSync("payment_error_log.txt", error?.stack || String(error));
-        return new NextResponse(`Internal Server Error: ${error?.message || "Unknown"}`, { status: 500 });
+        console.error("Payment Error Stack:", error instanceof Error ? error.stack : String(error));
+        return new NextResponse(`Internal Server Error: ${error instanceof Error ? error.message : "Unknown"}`, { status: 500 });
     }
 }

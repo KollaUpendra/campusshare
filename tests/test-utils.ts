@@ -37,7 +37,7 @@ export const createTestItem = async (ownerId: string) => {
     return item;
 };
 
-export const loginUser = async (page: Page, user: { id: string, email: string | null, role: string }) => {
+export const loginUser = async (page: Page, user: { id: string; email?: string | null; role?: string }) => {
     const baseURL = 'http://localhost:3000';
 
     // 1. Get CSRF Token
@@ -52,7 +52,7 @@ export const loginUser = async (page: Page, user: { id: string, email: string | 
             csrfToken,
             email: user.email || '',
             id: user.id,
-            role: user.role,
+            role: user.role || '',
             redirect: 'false',
             json: 'true',
         },

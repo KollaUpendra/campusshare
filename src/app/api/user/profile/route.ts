@@ -31,8 +31,8 @@ export async function PUT(req: Request) {
 
         return NextResponse.json({ message: "Profile updated", user: updatedUser });
 
-    } catch (error: any) {
-        if (error.code === 'P2025') {
+    } catch (error: unknown) {
+        if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
             return new NextResponse("User record not found. Please sign out and sign in again.", { status: 404 });
         }
         console.error("[PROFILE_UPDATE]", error);

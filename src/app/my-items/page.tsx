@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import db from "@/lib/db";
+import { Prisma } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { Package } from "lucide-react";
 import Link from "next/link";
@@ -18,7 +19,12 @@ export default async function MyItemsPage() {
 
     const { user } = session;
 
-    let myItems: any[] = [];
+    let myItems: Prisma.ItemGetPayload<{
+        include: {
+            availability: true;
+            owner: { select: { name: true; image: true } }
+        }
+    }>[] = [];
 
     try {
         myItems = await db.item.findMany({
@@ -53,7 +59,7 @@ export default async function MyItemsPage() {
                 </div>
             ) : (
                 <div className="text-center py-20 border rounded-lg bg-muted/20 text-muted-foreground">
-                    <p className="mb-4">You haven't listed any items yet.</p>
+                    <p className="mb-4">You haven&apos;t listed any items yet.</p>
                     <Button variant="outline" asChild>
                         <Link href="/post-item">List Your First Item</Link>
                     </Button>

@@ -16,14 +16,14 @@ export const dynamic = "force-dynamic";
 
 import ItemCard from "@/components/items/ItemCard";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import Link from "next/link";
 import db from "@/lib/db";
 import AuthGuard from "@/components/auth/AuthGuard";
 
 async function getItems(query?: string, category?: string, type?: string) {
     try {
-        const where: any = { status: { in: ["active", "AVAILABLE"] } };
+        const where: Exclude<Parameters<typeof db.item.findMany>[0], undefined>["where"] = { status: { in: ["active", "AVAILABLE"] } };
 
         if (query) {
             where.OR = [
@@ -142,7 +142,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                             </div>
                             <h3 className="text-2xl font-bold mb-3 text-foreground">No items found</h3>
                             <p className="text-muted-foreground max-w-sm mx-auto mb-8 leading-relaxed">
-                                We couldn't find anything matching your search. Try adjusting your filters to find what you're looking for.
+                                We couldn&apos;t find anything matching your search. Try adjusting your filters to find what you&apos;re looking for.
                             </p>
                             {(query || category !== "All" || type !== "All") && (
                                 <Button asChild variant="outline" className="rounded-xl border-primary text-primary hover:bg-primary/5 border-2 h-12 px-6">

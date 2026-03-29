@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import PublicGuard from "@/components/auth/PublicGuard";
-import { ArrowRight, ShieldCheck, Zap, RefreshCw, Star, Users } from "lucide-react";
+import { ArrowRight, ShieldCheck, Zap, RefreshCw, Users } from "lucide-react";
 
 export default function LandingPage() {
   return (

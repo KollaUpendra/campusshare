@@ -53,13 +53,13 @@ export async function POST(
         const finedUser = booking.borrower;
         const beneficiary = booking.item.ownerId;
 
-        const finedUserCoins = (finedUser as any).coins || 0;
+        const finedUserCoins = (finedUser as { coins?: number }).coins || 0;
         const actualDeduction = Math.min(fineCoins, finedUserCoins);
         const pendingAmount = fineCoins - actualDeduction;
 
-        const result = await db.$transaction(async (tx: any) => {
+        const result = await db.$transaction(async (tx) => {
             // 1. Deduct from fined user (as much as possible)
-            const updatedFined = await tx.user.update({
+            await tx.user.update({
                 where: { id: finedUser.id },
                 data: {
                     coins: { decrement: actualDeduction },
@@ -68,7 +68,7 @@ export async function POST(
             });
 
             // 2. Credit to beneficiary (owner)
-            const updatedBeneficiary = await tx.user.update({
+            await tx.user.update({
                 where: { id: beneficiary },
                 data: { coins: { increment: actualDeduction } }
             });

@@ -38,16 +38,18 @@ export default async function TransactionsPage() {
         return <div>User not found</div>;
     }
 
+    type TransactionRecord = { id: string; amount: number; createdAt: Date; type: string; item?: { title: string } | null; toUser?: { name: string | null; email: string | null } | null; fromUser?: { name: string | null; email: string | null } | null; };
+
     // Merge and sort transactions
     const transactions = [
         ...userData.sentTransactions
-            .filter((t: any) => t.amount < 0) // Only show debits (money leaving)
-            .map((t: any) => ({ ...t, direction: 'out', amount: Math.abs(t.amount) })),
+            .filter((t: TransactionRecord) => t.amount < 0) // Only show debits (money leaving)
+            .map((t: TransactionRecord) => ({ ...t, direction: 'out', amount: Math.abs(t.amount) })),
 
         ...userData.receivedTransactions
-            .filter((t: any) => t.amount > 0) // Only show credits (money entering)
-            .map((t: any) => ({ ...t, direction: 'in' }))
-    ].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            .filter((t: TransactionRecord) => t.amount > 0) // Only show credits (money entering)
+            .map((t: TransactionRecord) => ({ ...t, direction: 'in' }))
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-2xl">

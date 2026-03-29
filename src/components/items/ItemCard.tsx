@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { User } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
 import { useSession } from "next-auth/react";
 
 interface ItemCardProps {
@@ -29,7 +28,7 @@ interface ItemCardProps {
 }
 
 export default function ItemCard({ item, showEditButton = false }: ItemCardProps) {
-    const { data: session } = useSession();
+    useSession();
 
 
 

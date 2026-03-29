@@ -2,10 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -18,7 +14,6 @@ const links = [
 
 export function AdminNav() {
     const pathname = usePathname();
-    const [open, setOpen] = useState(false);
 
     return (
         <>
